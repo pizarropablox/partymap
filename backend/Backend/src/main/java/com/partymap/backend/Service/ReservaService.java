@@ -21,7 +21,7 @@ public interface ReservaService {
     //actualizar paciente
     Reserva updateReserva(Long id,Reserva reserva);
 
-     //eliminar paciente
+     //eliminar reserva
     void deleteReserva(Reserva reserva) throws IOException;
 
 }
