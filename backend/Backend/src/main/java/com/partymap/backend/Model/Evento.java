@@ -8,8 +8,6 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,13 +29,11 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad central que representa un evento en el sistema PartyMap.
  * Un evento es una actividad organizada por un productor en una ubicación específica.
- * Los eventos tienen un ciclo de vida que va desde borrador hasta finalizado,
- * y pueden recibir reservas de los clientes.
+ * Los eventos pueden recibir reservas de los clientes y tienen capacidad máxima opcional.
  */
 @Entity
 @Table(name = "Evento", indexes = {
     @Index(name = "idx_evento_fecha", columnList = "fecha"),
-    @Index(name = "idx_evento_estado", columnList = "estado"),
     @Index(name = "idx_evento_productor", columnList = "productor_id"),
     @Index(name = "idx_evento_ubicacion", columnList = "ubicacion_id")
 })
@@ -97,14 +93,6 @@ public class Evento extends BaseEntity {
     private String imagenUrl;
     
     /**
-     * Estado actual del evento en su ciclo de vida
-     */
-    @NotNull(message = "El estado del evento es obligatorio")
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", length = 20, nullable = false)
-    private EstadoEvento estado = EstadoEvento.BORRADOR;
-    
-    /**
      * Ubicación donde se realizará el evento
      */
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -144,18 +132,19 @@ public class Evento extends BaseEntity {
     
     /**
      * Verifica si el evento está disponible para nuevas reservas
-     * (publicado y con cupos disponibles)
+     * (no ha pasado y tiene cupos disponibles)
      */
     public boolean isDisponible() {
-        return EstadoEvento.PUBLICADO.equals(estado) && 
-               (capacidadMaxima == null || getCantidadReservas() < capacidadMaxima);
+        return !isEventoPasado() && 
+               (capacidadMaxima == null || getCantidadReservasActivas() < capacidadMaxima);
     }
     
     /**
-     * Calcula el total de reservas confirmadas para el evento
+     * Calcula el total de reservas activas para el evento
      */
-    public int getCantidadReservas() {
+    public int getCantidadReservasActivas() {
         return reservas.stream()
+                .filter(Reserva::isActiva)
                 .mapToInt(Reserva::getCantidad)
                 .sum();
     }
@@ -167,7 +156,7 @@ public class Evento extends BaseEntity {
         if (capacidadMaxima == null) {
             return Integer.MAX_VALUE;
         }
-        return Math.max(0, capacidadMaxima - getCantidadReservas());
+        return Math.max(0, capacidadMaxima - getCantidadReservasActivas());
     }
     
     /**
@@ -184,28 +173,5 @@ public class Evento extends BaseEntity {
         LocalDateTime ahora = LocalDateTime.now();
         LocalDateTime proximo = ahora.plusDays(7);
         return fecha.isAfter(ahora) && fecha.isBefore(proximo);
-    }
-    
-    /**
-     * Cambia el estado del evento a PUBLICADO (solo desde BORRADOR)
-     */
-    public void publicar() {
-        if (EstadoEvento.BORRADOR.equals(estado)) {
-            this.estado = EstadoEvento.PUBLICADO;
-        }
-    }
-    
-    /**
-     * Cancela el evento cambiando su estado a CANCELADO
-     */
-    public void cancelar() {
-        this.estado = EstadoEvento.CANCELADO;
-    }
-    
-    /**
-     * Finaliza el evento cambiando su estado a FINALIZADO
-     */
-    public void finalizar() {
-        this.estado = EstadoEvento.FINALIZADO;
     }
 } 

@@ -84,12 +84,12 @@ public class Reserva extends BaseEntity {
     private String comentarios;
     
     /**
-     * Estado actual de la reserva en su ciclo de vida
+     * Estado actual de la reserva
      */
     @NotNull(message = "El estado de la reserva es obligatorio")
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", length = 20, nullable = false)
-    private EstadoReserva estado = EstadoReserva.PENDIENTE;
+    private EstadoReserva estado = EstadoReserva.RESERVADA;
     
     /**
      * Usuario que realizó la reserva
@@ -108,41 +108,17 @@ public class Reserva extends BaseEntity {
     private Evento evento;
     
     /**
-     * Confirma la reserva cambiando su estado a CONFIRMADA
-     * Solo se puede confirmar desde estado PENDIENTE
-     */
-    public void confirmar() {
-        if (EstadoReserva.PENDIENTE.equals(estado)) {
-            this.estado = EstadoReserva.CONFIRMADA;
-        }
-    }
-    
-    /**
      * Cancela la reserva cambiando su estado a CANCELADA
-     * No se puede cancelar una reserva ya completada
      */
     public void cancelar() {
-        if (!EstadoReserva.COMPLETADA.equals(estado)) {
-            this.estado = EstadoReserva.CANCELADA;
-        }
+        this.estado = EstadoReserva.CANCELADA;
     }
     
     /**
-     * Marca la reserva como completada
-     * Solo se puede completar desde estado CONFIRMADA
-     */
-    public void completar() {
-        if (EstadoReserva.CONFIRMADA.equals(estado)) {
-            this.estado = EstadoReserva.COMPLETADA;
-        }
-    }
-    
-    /**
-     * Verifica si la reserva está activa (pendiente o confirmada)
+     * Verifica si la reserva está activa (estado RESERVADA)
      */
     public boolean isActiva() {
-        return EstadoReserva.PENDIENTE.equals(estado) || 
-               EstadoReserva.CONFIRMADA.equals(estado);
+        return EstadoReserva.RESERVADA.equals(estado);
     }
     
     /**
@@ -150,13 +126,6 @@ public class Reserva extends BaseEntity {
      */
     public boolean isCancelada() {
         return EstadoReserva.CANCELADA.equals(estado);
-    }
-    
-    /**
-     * Verifica si la reserva está completada
-     */
-    public boolean isCompletada() {
-        return EstadoReserva.COMPLETADA.equals(estado);
     }
     
     /**
@@ -189,7 +158,7 @@ public class Reserva extends BaseEntity {
             fechaReserva = LocalDateTime.now();
         }
         if (estado == null) {
-            estado = EstadoReserva.PENDIENTE;
+            estado = EstadoReserva.RESERVADA;
         }
         actualizarPrecioTotal();
     }
