@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
  * Las ubicaciones son utilizadas por los eventos para indicar dónde se realizarán.
  */
 @Entity
-@Table(name = "Ubicacion", indexes = {
+@Table(name = "UBICACION", indexes = {
     @Index(name = "idx_ubicacion_comuna", columnList = "comuna"),
     @Index(name = "idx_ubicacion_coords", columnList = "latitud,longitud")
 })

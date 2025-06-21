@@ -71,7 +71,7 @@ public class EventoController {
      * Obtiene todos los eventos del sistema
      * GET /evento
      */
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<EventoResponseDTO>> getAllEventos() {
         List<Evento> eventos = eventoService.getAllEvento();
         List<EventoResponseDTO> eventosDTO = eventos.stream()

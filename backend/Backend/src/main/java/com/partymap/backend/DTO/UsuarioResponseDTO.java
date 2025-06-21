@@ -46,7 +46,7 @@ public class UsuarioResponseDTO {
     /**
      * Indica si el usuario está activo en el sistema
      */
-    private Boolean activo;
+    private Integer activo;
     
     /**
      * Fecha de creación del usuario

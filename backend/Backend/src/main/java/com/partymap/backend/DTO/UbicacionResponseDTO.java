@@ -49,7 +49,7 @@ public class UbicacionResponseDTO {
     /**
      * Indica si la ubicación está activa
      */
-    private Boolean activo;
+    private Integer activo;
     
     /**
      * Fecha de creación de la ubicación

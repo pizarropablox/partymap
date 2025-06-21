@@ -29,7 +29,7 @@ public abstract class BaseEntity {
      * Permite soft delete sin eliminar físicamente los registros.
      */
     @Column(name = "activo", nullable = false)
-    private Boolean activo = true;
+    private Integer activo = 1;
     
     /**
      * Fecha y hora de creación del registro.
@@ -49,14 +49,14 @@ public abstract class BaseEntity {
     
     /**
      * Método que se ejecuta automáticamente antes de persistir una nueva entidad.
-     * Establece las fechas de creación y modificación, y asegura que el estado activo sea true.
+     * Establece las fechas de creación y modificación, y asegura que el estado activo sea 1.
      */
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
         fechaModificacion = LocalDateTime.now();
         if (activo == null) {
-            activo = true;
+            activo = 1;
         }
     }
     

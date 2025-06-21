@@ -61,7 +61,7 @@ public class ReservaResponseDTO {
     /**
      * Indica si la reserva está activa
      */
-    private Boolean activo;
+    private Integer activo;
     
     /**
      * Fecha de creación de la reserva

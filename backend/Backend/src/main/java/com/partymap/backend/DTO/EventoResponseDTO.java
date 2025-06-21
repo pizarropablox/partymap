@@ -60,7 +60,7 @@ public class EventoResponseDTO {
     /**
      * Indica si el evento está activo
      */
-    private Boolean activo;
+    private Integer activo;
     
     /**
      * Fecha de creación del evento

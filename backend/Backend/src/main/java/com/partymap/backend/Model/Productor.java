@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
  * asociado a un usuario del sistema.
  */
 @Entity
-@Table(name = "Productor", indexes = {
+@Table(name = "PRODUCTOR", indexes = {
     @Index(name = "idx_productor_rut", columnList = "rut"),
     @Index(name = "idx_productor_usuario", columnList = "usuario_id")
 })

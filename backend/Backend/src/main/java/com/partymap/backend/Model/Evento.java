@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
  * Los eventos pueden recibir reservas de los clientes y tienen capacidad máxima opcional.
  */
 @Entity
-@Table(name = "Evento", indexes = {
+@Table(name = "EVENTO", indexes = {
     @Index(name = "idx_evento_fecha", columnList = "fecha"),
     @Index(name = "idx_evento_productor", columnList = "productor_id"),
     @Index(name = "idx_evento_ubicacion", columnList = "ubicacion_id")

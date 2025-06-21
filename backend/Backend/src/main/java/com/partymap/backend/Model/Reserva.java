@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
  * y el estado de la reserva. Incluye información de precios y comentarios opcionales.
  */
 @Entity
-@Table(name = "Reserva", indexes = {
+@Table(name = "RESERVA", indexes = {
     @Index(name = "idx_reserva_usuario", columnList = "usuario_id"),
     @Index(name = "idx_reserva_evento", columnList = "evento_id"),
     @Index(name = "idx_reserva_fecha", columnList = "fecha_reserva"),

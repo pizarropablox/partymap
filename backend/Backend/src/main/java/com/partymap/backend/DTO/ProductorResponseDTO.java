@@ -38,7 +38,7 @@ public class ProductorResponseDTO {
     /**
      * Indica si el productor está activo
      */
-    private Boolean activo;
+    private Integer activo;
     
     /**
      * Fecha de creación del productor

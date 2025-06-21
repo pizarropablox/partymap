@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
  * pueden crear y gestionar eventos.
  */
 @Entity
-@Table(name = "Usuario", indexes = {
+@Table(name = "USUARIO", indexes = {
     @Index(name = "idx_usuario_email", columnList = "email"),
     @Index(name = "idx_usuario_tipo", columnList = "tipo_usuario")
 })
