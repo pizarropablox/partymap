@@ -1,9 +1,21 @@
-package com.microservicio_bff_main.controller;    
+package com.microservicio_bff_main.Controller;    
 
-import java.util.map;
 
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -13,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/microservicio")
 public class MicroservicioController {
 
-    @PostMapping
+     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, String> body) {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Integracion OK - POST");

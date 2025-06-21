@@ -22,16 +22,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.ReservaDTO;
 import com.partymap.backend.DTO.ReservaResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Reserva;
+import com.partymap.backend.Model.Usuario;
 import com.partymap.backend.Service.ReservaService;
 
 /**
  * Controlador REST para la gestión de reservas.
  * Proporciona endpoints para operaciones CRUD de reservas y funcionalidades adicionales
  * que aprovechan todas las capacidades del servicio mejorado.
+ * 
+ * SEGURIDAD:
+ * - CLIENTE: Puede crear, ver y modificar sus propias reservas
+ * - PRODUCTOR: Puede ver todas las reservas de sus eventos
+ * - ADMINISTRADOR: Acceso completo a todas las reservas
  */
 @RestController
 @CrossOrigin
@@ -39,19 +46,43 @@ import com.partymap.backend.Service.ReservaService;
 public class ReservaController {
 
     private final ReservaService reservaService;
+    private final SecurityUtils securityUtils;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public ReservaController(ReservaService reservaService) {
+    public ReservaController(ReservaService reservaService, SecurityUtils securityUtils) {
         this.reservaService = reservaService;
+        this.securityUtils = securityUtils;
     }
 
     /**
      * Obtiene todas las reservas del sistema
      * GET /reserva
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Ve todas las reservas
+     * - PRODUCTOR: Ve todas las reservas
+     * - CLIENTE: Ve solo sus propias reservas
      */
     @GetMapping
     public ResponseEntity<List<ReservaResponseDTO>> getAllReservas() {
-        List<Reserva> reservas = reservaService.getAllreservas();
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Reserva> reservas;
+        Usuario user = currentUser.get();
+
+        if (user.isAdministrador() || user.isProductor()) {
+            // Admin y productores ven todas las reservas
+            reservas = reservaService.getAllreservas();
+        } else if (user.isCliente()) {
+            // Clientes solo ven sus propias reservas
+            reservas = reservaService.getReservasByUsuarioId(user.getId());
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
@@ -61,25 +92,58 @@ public class ReservaController {
     /**
      * Obtiene una reserva por su ID
      * GET /reserva/{id}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver cualquier reserva
+     * - PRODUCTOR: Puede ver cualquier reserva
+     * - CLIENTE: Solo puede ver sus propias reservas
      */
     @GetMapping("/{id}")
     public ResponseEntity<ReservaResponseDTO> getReservaById(@PathVariable Long id) {
         Optional<Reserva> reserva = reservaService.getReservaById(id);
-        if (reserva.isPresent()) {
-            return ResponseEntity.ok(convertToResponseDTO(reserva.get()));
-        } else {
+        if (reserva.isEmpty()) {
             throw new NotFoundException("Reserva no encontrada con ID: " + id);
         }
+
+        // Verificar permisos de acceso
+        if (!securityUtils.canAccessReserva(reserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(convertToResponseDTO(reserva.get()));
     }
 
     /**
      * Crea una nueva reserva
      * POST /reserva
+     * 
+     * SEGURIDAD:
+     * - CLIENTE: Puede crear reservas
+     * - PRODUCTOR: No puede crear reservas (debe ser cliente)
+     * - ADMINISTRADOR: Puede crear reservas
      */
     @PostMapping
     public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody ReservaDTO reservaDTO) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo clientes y administradores pueden crear reservas
+        if (!user.isCliente() && !user.isAdministrador()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             Reserva reserva = convertToEntity(reservaDTO);
+            
+            // Si es cliente, asegurar que la reserva se asigne a su usuario
+            if (user.isCliente()) {
+                reserva.setUsuario(user);
+            }
+            
             Reserva reservaCreada = reservaService.createReserva(reserva);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertToResponseDTO(reservaCreada));
@@ -93,11 +157,26 @@ public class ReservaController {
     /**
      * Actualiza una reserva existente
      * PUT /reserva/{id}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede modificar cualquier reserva
+     * - CLIENTE: Solo puede modificar sus propias reservas
+     * - PRODUCTOR: No puede modificar reservas
      */
     @PutMapping("/{id}")
     public ResponseEntity<ReservaResponseDTO> updateReserva(
             @PathVariable Long id,
             @RequestBody ReservaDTO reservaDTO) {
+        Optional<Reserva> existingReserva = reservaService.getReservaById(id);
+        if (existingReserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verificar permisos de modificación
+        if (!securityUtils.canModifyReserva(existingReserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             Reserva reserva = convertToEntity(reservaDTO);
             Reserva reservaActualizada = reservaService.updateReserva(id, reserva);
@@ -112,9 +191,22 @@ public class ReservaController {
     /**
      * Elimina una reserva
      * DELETE /reserva/{id}
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR puede eliminar reservas
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReserva(@PathVariable Long id) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Solo administradores pueden eliminar reservas
+        if (!currentUser.get().isAdministrador()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             Optional<Reserva> reserva = reservaService.getReservaById(id);
             if (reserva.isPresent()) {
@@ -131,9 +223,26 @@ public class ReservaController {
     /**
      * Obtiene todas las reservas de un usuario específico
      * GET /reserva/usuario/{usuarioId}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver reservas de cualquier usuario
+     * - PRODUCTOR: Puede ver reservas de cualquier usuario
+     * - CLIENTE: Solo puede ver sus propias reservas
      */
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasByUsuario(@PathVariable Long usuarioId) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Clientes solo pueden ver sus propias reservas
+        if (user.isCliente() && !user.getId().equals(usuarioId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasByUsuarioId(usuarioId);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -144,9 +253,26 @@ public class ReservaController {
     /**
      * Obtiene todas las reservas de un evento específico
      * GET /reserva/evento/{eventoId}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver reservas de cualquier evento
+     * - PRODUCTOR: Puede ver reservas de cualquier evento
+     * - CLIENTE: No puede ver reservas de eventos (solo las suyas)
      */
     @GetMapping("/evento/{eventoId}")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasByEvento(@PathVariable Long eventoId) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden ver reservas de eventos
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasByEventoId(eventoId);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -157,10 +283,34 @@ public class ReservaController {
     /**
      * Obtiene todas las reservas activas
      * GET /reserva/activas
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver todas las reservas activas
+     * - PRODUCTOR: Puede ver todas las reservas activas
+     * - CLIENTE: Solo puede ver sus propias reservas activas
      */
     @GetMapping("/activas")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasActivas() {
-        List<Reserva> reservas = reservaService.getReservasActivas();
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Reserva> reservas;
+        Usuario user = currentUser.get();
+
+        if (user.isAdministrador() || user.isProductor()) {
+            // Admin y productores ven todas las reservas activas
+            reservas = reservaService.getReservasActivas();
+        } else if (user.isCliente()) {
+            // Clientes solo ven sus propias reservas activas
+            reservas = reservaService.getReservasByUsuarioId(user.getId()).stream()
+                    .filter(Reserva::isActiva)
+                    .collect(Collectors.toList());
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
@@ -170,10 +320,34 @@ public class ReservaController {
     /**
      * Obtiene todas las reservas canceladas
      * GET /reserva/canceladas
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver todas las reservas canceladas
+     * - PRODUCTOR: Puede ver todas las reservas canceladas
+     * - CLIENTE: Solo puede ver sus propias reservas canceladas
      */
     @GetMapping("/canceladas")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasCanceladas() {
-        List<Reserva> reservas = reservaService.getReservasCanceladas();
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Reserva> reservas;
+        Usuario user = currentUser.get();
+
+        if (user.isAdministrador() || user.isProductor()) {
+            // Admin y productores ven todas las reservas canceladas
+            reservas = reservaService.getReservasCanceladas();
+        } else if (user.isCliente()) {
+            // Clientes solo ven sus propias reservas canceladas
+            reservas = reservaService.getReservasByUsuarioId(user.getId()).stream()
+                    .filter(Reserva::isCancelada)
+                    .collect(Collectors.toList());
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
@@ -183,9 +357,24 @@ public class ReservaController {
     /**
      * Cancela una reserva
      * PUT /reserva/{id}/cancelar
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede cancelar cualquier reserva
+     * - CLIENTE: Solo puede cancelar sus propias reservas
+     * - PRODUCTOR: No puede cancelar reservas
      */
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<ReservaResponseDTO> cancelarReserva(@PathVariable Long id) {
+        Optional<Reserva> reserva = reservaService.getReservaById(id);
+        if (reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verificar permisos de modificación
+        if (!securityUtils.canModifyReserva(reserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             Reserva reservaCancelada = reservaService.cancelarReserva(id);
             return ResponseEntity.ok(convertToResponseDTO(reservaCancelada));
@@ -199,9 +388,22 @@ public class ReservaController {
     /**
      * Reactiva una reserva cancelada
      * PUT /reserva/{id}/reactivar
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR puede reactivar reservas
      */
     @PutMapping("/{id}/reactivar")
     public ResponseEntity<ReservaResponseDTO> reactivarReserva(@PathVariable Long id) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Solo administradores pueden reactivar reservas
+        if (!currentUser.get().isAdministrador()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             Reserva reservaReactivada = reservaService.reactivarReserva(id);
             return ResponseEntity.ok(convertToResponseDTO(reservaReactivada));
@@ -215,9 +417,24 @@ public class ReservaController {
     /**
      * Obtiene el precio total de una reserva específica
      * GET /reserva/{id}/precio-total
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver precio de cualquier reserva
+     * - PRODUCTOR: Puede ver precio de cualquier reserva
+     * - CLIENTE: Solo puede ver precio de sus propias reservas
      */
     @GetMapping("/{id}/precio-total")
     public ResponseEntity<BigDecimal> getPrecioTotal(@PathVariable Long id) {
+        Optional<Reserva> reserva = reservaService.getReservaById(id);
+        if (reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verificar permisos de acceso
+        if (!securityUtils.canAccessReserva(reserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             BigDecimal precioTotal = reservaService.getPrecioTotalReserva(id);
             return ResponseEntity.ok(precioTotal);
@@ -229,11 +446,26 @@ public class ReservaController {
     /**
      * Obtiene reservas por rango de fechas
      * GET /reserva/rango-fechas
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/rango-fechas")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasPorRangoFechas(
             @RequestParam String fechaInicio,
             @RequestParam String fechaFin) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             LocalDateTime inicio = LocalDateTime.parse(fechaInicio, DATE_FORMATTER);
             LocalDateTime fin = LocalDateTime.parse(fechaFin, DATE_FORMATTER);
@@ -251,12 +483,29 @@ public class ReservaController {
     /**
      * Obtiene reservas de un usuario en un rango de fechas
      * GET /reserva/usuario/{usuarioId}/rango-fechas
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver reservas de cualquier usuario
+     * - PRODUCTOR: Puede ver reservas de cualquier usuario
+     * - CLIENTE: Solo puede ver sus propias reservas
      */
     @GetMapping("/usuario/{usuarioId}/rango-fechas")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasUsuarioPorRangoFechas(
             @PathVariable Long usuarioId,
             @RequestParam String fechaInicio,
             @RequestParam String fechaFin) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Clientes solo pueden ver sus propias reservas
+        if (user.isCliente() && !user.getId().equals(usuarioId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             LocalDateTime inicio = LocalDateTime.parse(fechaInicio, DATE_FORMATTER);
             LocalDateTime fin = LocalDateTime.parse(fechaFin, DATE_FORMATTER);
@@ -274,12 +523,27 @@ public class ReservaController {
     /**
      * Obtiene reservas de un evento en un rango de fechas
      * GET /reserva/evento/{eventoId}/rango-fechas
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/evento/{eventoId}/rango-fechas")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasEventoPorRangoFechas(
             @PathVariable Long eventoId,
             @RequestParam String fechaInicio,
             @RequestParam String fechaFin) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             LocalDateTime inicio = LocalDateTime.parse(fechaInicio, DATE_FORMATTER);
             LocalDateTime fin = LocalDateTime.parse(fechaFin, DATE_FORMATTER);
@@ -297,10 +561,25 @@ public class ReservaController {
     /**
      * Obtiene reservas con precio total mayor a un valor específico
      * GET /reserva/precio-minimo
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/precio-minimo")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasPorPrecioMinimo(
             @RequestParam BigDecimal precioMinimo) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasPorPrecioMinimo(precioMinimo);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -311,10 +590,25 @@ public class ReservaController {
     /**
      * Obtiene reservas con precio total menor a un valor específico
      * GET /reserva/precio-maximo
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/precio-maximo")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasPorPrecioMaximo(
             @RequestParam BigDecimal precioMaximo) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasPorPrecioMaximo(precioMaximo);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -325,9 +619,24 @@ public class ReservaController {
     /**
      * Obtiene reservas por cantidad de entradas
      * GET /reserva/cantidad/{cantidad}
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/cantidad/{cantidad}")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasPorCantidad(@PathVariable Integer cantidad) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasPorCantidad(cantidad);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -338,10 +647,25 @@ public class ReservaController {
     /**
      * Obtiene reservas con cantidad mayor a un valor específico
      * GET /reserva/cantidad-minima
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/cantidad-minima")
     public ResponseEntity<List<ReservaResponseDTO>> getReservasPorCantidadMinima(
             @RequestParam Integer cantidadMinima) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> reservas = reservaService.getReservasPorCantidadMinima(cantidadMinima);
         List<ReservaResponseDTO> reservasDTO = reservas.stream()
                 .map(this::convertToResponseDTO)
@@ -352,9 +676,24 @@ public class ReservaController {
     /**
      * Verifica si una reserva está activa
      * GET /reserva/{id}/activa
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver estado de cualquier reserva
+     * - PRODUCTOR: Puede ver estado de cualquier reserva
+     * - CLIENTE: Solo puede ver estado de sus propias reservas
      */
     @GetMapping("/{id}/activa")
     public ResponseEntity<Boolean> isReservaActiva(@PathVariable Long id) {
+        Optional<Reserva> reserva = reservaService.getReservaById(id);
+        if (reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verificar permisos de acceso
+        if (!securityUtils.canAccessReserva(reserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         boolean isActiva = reservaService.isReservaActiva(id);
         return ResponseEntity.ok(isActiva);
     }
@@ -362,9 +701,24 @@ public class ReservaController {
     /**
      * Verifica si una reserva está cancelada
      * GET /reserva/{id}/cancelada
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver estado de cualquier reserva
+     * - PRODUCTOR: Puede ver estado de cualquier reserva
+     * - CLIENTE: Solo puede ver estado de sus propias reservas
      */
     @GetMapping("/{id}/cancelada")
     public ResponseEntity<Boolean> isReservaCancelada(@PathVariable Long id) {
+        Optional<Reserva> reserva = reservaService.getReservaById(id);
+        if (reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verificar permisos de acceso
+        if (!securityUtils.canAccessReserva(reserva.get().getUsuario().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         boolean isCancelada = reservaService.isReservaCancelada(id);
         return ResponseEntity.ok(isCancelada);
     }
@@ -372,6 +726,9 @@ public class ReservaController {
     /**
      * Busca reservas con filtros avanzados
      * GET /reserva/buscar
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/buscar")
     public ResponseEntity<List<ReservaResponseDTO>> buscarReservas(
@@ -382,6 +739,18 @@ public class ReservaController {
             @RequestParam(required = false) BigDecimal precioMinimo,
             @RequestParam(required = false) BigDecimal precioMaximo,
             @RequestParam(required = false) Integer cantidadMinima) {
+        
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         
         List<Reserva> reservas = reservaService.getAllreservas();
         
@@ -406,9 +775,24 @@ public class ReservaController {
     /**
      * Obtiene estadísticas completas de reservas
      * GET /reserva/estadisticas
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/estadisticas")
     public ResponseEntity<Object> getEstadisticas() {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         Object estadisticas = reservaService.getEstadisticasCompletas();
         return ResponseEntity.ok(estadisticas);
     }
@@ -416,9 +800,24 @@ public class ReservaController {
     /**
      * Obtiene estadísticas básicas de reservas (método anterior mantenido por compatibilidad)
      * GET /reserva/estadisticas-basicas
+     * 
+     * SEGURIDAD:
+     * - Solo ADMINISTRADOR y PRODUCTOR pueden usar este endpoint
      */
     @GetMapping("/estadisticas-basicas")
     public ResponseEntity<Object> getEstadisticasBasicas() {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden usar este endpoint
+        if (user.isCliente()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         List<Reserva> todasLasReservas = reservaService.getAllreservas();
         List<Reserva> reservasActivas = reservaService.getReservasActivas();
         

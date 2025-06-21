@@ -8,7 +8,6 @@ import com.partymap.backend.RestClients.ClienteRest;
 import com.partymap.backend.Service.BffService;
 
 
-
 @Service
 public class BffServiceImpl implements BffService {
 
