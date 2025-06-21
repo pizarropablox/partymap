@@ -20,7 +20,7 @@ public class SecurityConfig {
         http.cors(Customizer.withDefaults())
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/evento/**", "/reserva/**") // Ignorar endpoints de API
+                .ignoringRequestMatchers("/evento/**", "/productor/**", "/reserva/**") // Ignorar endpoints de API
             )
             .authorizeHttpRequests(authorize -> authorize
                 // Configuración de seguridad para eventos
@@ -44,6 +44,28 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/evento/disponibles").permitAll()
                 // GET /evento/{id}/cupos - Obtener cupos disponibles (acceso público para consulta)
                 .requestMatchers(HttpMethod.GET, "/evento/{id}/cupos").permitAll()
+                
+                // Configuración de seguridad para productores
+                // GET /productor - Obtener todos los productores (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor").permitAll()
+                // GET /productor/{id} - Obtener productor por ID (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/{id}").permitAll()
+                // GET /productor/rut/{rut} - Obtener productor por RUT (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/rut/{rut}").permitAll()
+                // POST /productor - Crear nuevo productor (solo administradores)
+                .requestMatchers(HttpMethod.POST, "/productor").authenticated()
+                // PUT /productor/{id} - Actualizar productor (solo el propio productor o administradores)
+                .requestMatchers(HttpMethod.PUT, "/productor/{id}").authenticated()
+                // DELETE /productor/{id} - Eliminar productor (solo administradores)
+                .requestMatchers(HttpMethod.DELETE, "/productor/{id}").authenticated()
+                // GET /productor/buscar - Buscar productores con filtros (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/buscar").permitAll()
+                // GET /productor/empresa/{nombreEmpresa} - Obtener productores por empresa (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/empresa/{nombreEmpresa}").permitAll()
+                // GET /productor/validar-rut - Validar RUT (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/validar-rut").permitAll()
+                // GET /productor/existe-rut - Verificar existencia de RUT (acceso público para consulta)
+                .requestMatchers(HttpMethod.GET, "/productor/existe-rut").permitAll()
                 
                 // Configuración de seguridad para reservas
                 // GET /reserva - Solo usuarios autenticados pueden ver reservas

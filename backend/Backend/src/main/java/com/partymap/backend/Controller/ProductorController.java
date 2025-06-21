@@ -47,7 +47,7 @@ public class ProductorController {
      * Obtiene todos los productores del sistema
      * GET /productor
      */
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<ProductorResponseDTO>> getAllProductores() {
         List<Productor> productores = productorService.getAllProductor();
         List<ProductorResponseDTO> productoresDTO = productores.stream()
