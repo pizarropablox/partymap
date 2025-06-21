@@ -1,0 +1,20 @@
+Usa el endpoint POST /evento/con-ubicacion que permite crear un evento y su ubicación en una sola operación:
+
+
+{
+  "eventoDTO": {
+    "nombre": "Fiesta de Fin de Año 2024",
+    "descripcion": "Celebra el fin de año con música en vivo, DJ, bebidas y un ambiente increíble.",
+    "fecha": "2024-12-31T22:00:00",
+    "capacidadMaxima": 200,
+    "precioEntrada": 25000.00,
+    "imagenUrl": "https://ejemplo.com/imagen-fiesta.jpg",
+    "productorId": 1
+  },
+  "ubicacionDTO": {
+    "direccion": "Av. Providencia 1234",
+    "comuna": "Providencia",
+    "latitud": -33.4489,
+    "longitud": -70.6693
+  }
+}
