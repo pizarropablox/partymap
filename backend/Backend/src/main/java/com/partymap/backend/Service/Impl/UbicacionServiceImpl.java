@@ -3,6 +3,7 @@ package com.partymap.backend.Service.Impl;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +28,13 @@ public class UbicacionServiceImpl implements UbicacionService {
     }
 
     /**
-     * Obtiene todas las ubicaciones del sistema
+     * Obtiene todas las ubicaciones activas del sistema
      */
     @Override
     public List<Ubicacion> getAllUbicaciones() {
-        return ubicacionRepository.findAll();
+        return ubicacionRepository.findAll().stream()
+                .filter(ubicacion -> ubicacion.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -88,7 +91,7 @@ public class UbicacionServiceImpl implements UbicacionService {
     }
 
     /**
-     * Elimina una ubicación del sistema
+     * Elimina una ubicación del sistema (soft delete)
      */
     @Override
     public void deleteUbicacion(Ubicacion ubicacion) throws IOException {
@@ -101,7 +104,9 @@ public class UbicacionServiceImpl implements UbicacionService {
             throw new IllegalStateException("No se puede eliminar una ubicación que tiene eventos asociados");
         }
         
-        ubicacionRepository.deleteById(ubicacion.getId());
+        // Soft delete: cambiar estado activo a 0
+        ubicacion.setActivo(0);
+        ubicacionRepository.save(ubicacion);
     }
 
     /**

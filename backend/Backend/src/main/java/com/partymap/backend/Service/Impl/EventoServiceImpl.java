@@ -3,6 +3,7 @@ package com.partymap.backend.Service.Impl;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,11 +32,13 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Obtiene todos los eventos
+     * Obtiene todos los eventos activos
      */
     @Override
     public List<Evento> getAllEvento() {
-        return eventoRepository.findAll();
+        return eventoRepository.findAll().stream()
+                .filter(evento -> evento.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -116,13 +119,16 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Elimina un evento del sistema
+     * Elimina un evento del sistema (soft delete)
      */
     @Override
     public void deleteEvento(Evento evento) throws IOException {
         if (!eventoRepository.existsById(evento.getId())) {
             throw new NotFoundException("Evento no encontrado con ID: " + evento.getId());
         }
-        eventoRepository.deleteById(evento.getId());
+        
+        // Soft delete: cambiar estado activo a 0
+        evento.setActivo(0);
+        eventoRepository.save(evento);
     }
 }

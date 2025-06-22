@@ -2,6 +2,7 @@ package com.partymap.backend.Service.Impl;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +26,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     /**
-     * Obtiene todos los usuarios del sistema
+     * Obtiene todos los usuarios activos del sistema
      */
     @Override
     public List<Usuario> getAllUsuarios() {
-        return usuarioRepository.findAll();
+        return usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 
     /**

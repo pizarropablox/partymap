@@ -3,6 +3,7 @@ package com.partymap.backend.Service.Impl;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,11 +32,13 @@ public class ProductorServiceImpl implements ProductorService {
     }
 
     /**
-     * Obtiene todos los productores del sistema
+     * Obtiene todos los productores activos del sistema
      */
     @Override
     public List<Productor> getAllProductor() {
-        return productorRepository.findAll();
+        return productorRepository.findAll().stream()
+                .filter(productor -> productor.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -126,7 +129,7 @@ public class ProductorServiceImpl implements ProductorService {
     }
 
     /**
-     * Elimina un productor del sistema
+     * Elimina un productor del sistema (soft delete)
      */
     @Override
     public void deleteProductor(Productor productor) throws IOException {
@@ -139,7 +142,9 @@ public class ProductorServiceImpl implements ProductorService {
             throw new IllegalStateException("No se puede eliminar un productor que tiene eventos asociados");
         }
         
-        productorRepository.deleteById(productor.getId());
+        // Soft delete: cambiar estado activo a 0
+        productor.setActivo(0);
+        productorRepository.save(productor);
     }
 
     /**

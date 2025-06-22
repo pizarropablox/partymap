@@ -34,11 +34,13 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Obtiene todas las reservas del sistema
+     * Obtiene todas las reservas activas del sistema
      */
     @Override
     public List<Reserva> getAllreservas() {
-        return reservaRepository.findAll();
+        return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -115,52 +117,59 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Elimina una reserva del sistema
+     * Elimina una reserva del sistema (soft delete)
      */
     @Override
     public void deleteReserva(Reserva reserva) throws IOException {
         if (!reservaRepository.existsById(reserva.getId())) {
             throw new NotFoundException("Reserva no encontrada con ID: " + reserva.getId());
         }
-        reservaRepository.deleteById(reserva.getId());
+        
+        // Soft delete: cambiar estado activo a 0
+        reserva.setActivo(0);
+        reservaRepository.save(reserva);
     }
 
     /**
-     * Obtiene todas las reservas de un usuario específico
+     * Obtiene todas las reservas activas de un usuario específico
      */
     @Override
     public List<Reserva> getReservasByUsuarioId(Long usuarioId) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getUsuario().getId().equals(usuarioId))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene todas las reservas de un evento específico
+     * Obtiene todas las reservas activas de un evento específico
      */
     @Override
     public List<Reserva> getReservasByEventoId(Long eventoId) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getEvento().getId().equals(eventoId))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas activas (estado RESERVADA)
+     * Obtiene reservas activas (estado RESERVADA y activo = 1)
      */
     @Override
     public List<Reserva> getReservasActivas() {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(Reserva::isActiva)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas canceladas (estado CANCELADA)
+     * Obtiene reservas canceladas (estado CANCELADA y activo = 1)
      */
     @Override
     public List<Reserva> getReservasCanceladas() {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(Reserva::isCancelada)
                 .collect(Collectors.toList());
     }
@@ -233,22 +242,24 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Obtiene reservas por rango de fechas
+     * Obtiene reservas activas por rango de fechas
      */
     @Override
     public List<Reserva> getReservasPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getFechaReserva().isAfter(fechaInicio) && 
                                  reserva.getFechaReserva().isBefore(fechaFin))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas de un usuario en un rango de fechas
+     * Obtiene reservas activas de un usuario en un rango de fechas
      */
     @Override
     public List<Reserva> getReservasUsuarioPorRangoFechas(Long usuarioId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getUsuario().getId().equals(usuarioId))
                 .filter(reserva -> reserva.getFechaReserva().isAfter(fechaInicio) && 
                                  reserva.getFechaReserva().isBefore(fechaFin))
@@ -256,11 +267,12 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Obtiene reservas de un evento en un rango de fechas
+     * Obtiene reservas activas de un evento en un rango de fechas
      */
     @Override
     public List<Reserva> getReservasEventoPorRangoFechas(Long eventoId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getEvento().getId().equals(eventoId))
                 .filter(reserva -> reserva.getFechaReserva().isAfter(fechaInicio) && 
                                  reserva.getFechaReserva().isBefore(fechaFin))
@@ -268,41 +280,45 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Obtiene reservas con precio total mayor a un valor específico
+     * Obtiene reservas activas con precio total mayor a un valor específico
      */
     @Override
     public List<Reserva> getReservasPorPrecioMinimo(BigDecimal precioMinimo) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getPrecioTotal().compareTo(precioMinimo) > 0)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas con precio total menor a un valor específico
+     * Obtiene reservas activas con precio total menor a un valor específico
      */
     @Override
     public List<Reserva> getReservasPorPrecioMaximo(BigDecimal precioMaximo) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getPrecioTotal().compareTo(precioMaximo) < 0)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas por cantidad de entradas
+     * Obtiene reservas activas por cantidad de entradas
      */
     @Override
     public List<Reserva> getReservasPorCantidad(Integer cantidad) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getCantidad().equals(cantidad))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene reservas con cantidad mayor a un valor específico
+     * Obtiene reservas activas con cantidad mayor a un valor específico
      */
     @Override
     public List<Reserva> getReservasPorCantidadMinima(Integer cantidadMinima) {
         return reservaRepository.findAll().stream()
+                .filter(reserva -> reserva.getActivo() == 1)
                 .filter(reserva -> reserva.getCantidad() > cantidadMinima)
                 .collect(Collectors.toList());
     }
@@ -326,11 +342,11 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     /**
-     * Obtiene estadísticas completas de reservas
+     * Obtiene estadísticas completas de reservas activas
      */
     @Override
     public Object getEstadisticasCompletas() {
-        List<Reserva> todasLasReservas = reservaRepository.findAll();
+        List<Reserva> todasLasReservas = getAllreservas(); // Solo reservas activas
         List<Reserva> reservasActivas = getReservasActivas();
         List<Reserva> reservasCanceladas = getReservasCanceladas();
         

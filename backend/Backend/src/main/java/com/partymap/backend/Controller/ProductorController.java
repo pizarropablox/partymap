@@ -124,7 +124,7 @@ public class ProductorController {
     }
 
     /**
-     * Elimina un productor
+     * Elimina un productor (soft delete - establece activo = 0)
      * DELETE /productor/{id}
      */
     @DeleteMapping("/{id}")
