@@ -63,7 +63,7 @@ public class ReservaController {
      * - PRODUCTOR: Ve todas las reservas
      * - CLIENTE: Ve solo sus propias reservas
      */
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<ReservaResponseDTO>> getAllReservas() {
         Optional<Usuario> currentUser = securityUtils.getCurrentUser();
         if (currentUser.isEmpty()) {
@@ -122,7 +122,7 @@ public class ReservaController {
      * - PRODUCTOR: No puede crear reservas (debe ser cliente)
      * - ADMINISTRADOR: Puede crear reservas
      */
-    @PostMapping
+    @PostMapping("/crear")
     public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody ReservaDTO reservaDTO) {
         Optional<Usuario> currentUser = securityUtils.getCurrentUser();
         if (currentUser.isEmpty()) {

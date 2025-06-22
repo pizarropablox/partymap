@@ -69,7 +69,7 @@ public class UbicacionController {
      * Crea una nueva ubicación
      * POST /ubicacion
      */
-    @PostMapping
+    @PostMapping("/crear")
     public ResponseEntity<UbicacionResponseDTO> createUbicacion(@RequestBody UbicacionDTO ubicacionDTO) {
         try {
             Ubicacion ubicacion = convertToEntity(ubicacionDTO);
