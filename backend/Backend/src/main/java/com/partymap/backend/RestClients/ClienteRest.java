@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-@FeignClient(name ="ClienteRest", url = "http://localhost:8081/microservicio")
+@FeignClient(name ="ClienteRest", url = "http://54.164.31.75:8083/microservicio")
 public interface  ClienteRest {
 
     @PostMapping

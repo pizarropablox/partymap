@@ -1,13 +1,13 @@
-package com.microservicio_bff_main;
+package cl.duoc.ejemplo.microservicio;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MicroservicioBffMainApplication {
+public class MicroservicioApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MicroservicioBffMainApplication.class, args);
+		SpringApplication.run(MicroservicioApplication.class, args);
 	}
 
 }

@@ -1,10 +1,10 @@
-package com.microservicio_bff_main;
+package cl.duoc.ejemplo.microservicio;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MicroservicioBffMainApplicationTests {
+class MicroservicioApplicationTests {
 
 	@Test
 	void contextLoads() {
