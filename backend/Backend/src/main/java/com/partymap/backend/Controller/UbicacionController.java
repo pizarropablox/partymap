@@ -42,7 +42,7 @@ public class UbicacionController {
      * Obtiene todas las ubicaciones del sistema
      * GET /ubicacion
      */
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<UbicacionResponseDTO>> getAllUbicaciones() {
         List<Ubicacion> ubicaciones = ubicacionService.getAllUbicaciones();
         List<UbicacionResponseDTO> ubicacionesDTO = ubicaciones.stream()
