@@ -1,0 +1,13 @@
+version: '1'
+services:
+  microservicio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - spring.datasource.url=jdbc:oracle:thin:@partymap_low?TNS_ADMIN=/app/Wallet_partymap
+      - spring.datasource.username=ADMIN
+      - spring.datasource.password=KpHhn6cg1ZWHs6
+    restart: always
