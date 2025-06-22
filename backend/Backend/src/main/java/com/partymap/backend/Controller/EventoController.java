@@ -246,7 +246,24 @@ public class EventoController {
             ProductorResponseDTO productorDTO = new ProductorResponseDTO();
             productorDTO.setId(evento.getProductor().getId());
             productorDTO.setNombreEmpresa(evento.getProductor().getNombreEmpresa());
+            productorDTO.setRut(evento.getProductor().getRut());
             productorDTO.setActivo(evento.getProductor().getActivo());
+            productorDTO.setFechaCreacion(evento.getProductor().getFechaCreacion());
+            productorDTO.setFechaModificacion(evento.getProductor().getFechaModificacion());
+            
+            // Incluir información completa del usuario si existe
+            if (evento.getProductor().getUsuario() != null) {
+                com.partymap.backend.DTO.UsuarioResponseDTO usuarioDTO = new com.partymap.backend.DTO.UsuarioResponseDTO();
+                usuarioDTO.setId(evento.getProductor().getUsuario().getId());
+                usuarioDTO.setNombre(evento.getProductor().getUsuario().getNombre());
+                usuarioDTO.setEmail(evento.getProductor().getUsuario().getEmail());
+                usuarioDTO.setTipoUsuario(evento.getProductor().getUsuario().getTipoUsuario());
+                usuarioDTO.setActivo(evento.getProductor().getUsuario().getActivo());
+                usuarioDTO.setFechaCreacion(evento.getProductor().getUsuario().getFechaCreacion());
+                usuarioDTO.setFechaModificacion(evento.getProductor().getUsuario().getFechaModificacion());
+                productorDTO.setUsuario(usuarioDTO);
+            }
+            
             dto.setProductor(productorDTO);
         }
         
@@ -255,7 +272,11 @@ public class EventoController {
             ubicacionDTO.setId(evento.getUbicacion().getId());
             ubicacionDTO.setDireccion(evento.getUbicacion().getDireccion());
             ubicacionDTO.setComuna(evento.getUbicacion().getComuna());
+            ubicacionDTO.setLatitud(evento.getUbicacion().getLatitud());
+            ubicacionDTO.setLongitud(evento.getUbicacion().getLongitud());
             ubicacionDTO.setActivo(evento.getUbicacion().getActivo());
+            ubicacionDTO.setFechaCreacion(evento.getUbicacion().getFechaCreacion());
+            ubicacionDTO.setFechaModificacion(evento.getUbicacion().getFechaModificacion());
             dto.setUbicacion(ubicacionDTO);
         }
         
