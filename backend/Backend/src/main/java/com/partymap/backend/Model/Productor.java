@@ -67,7 +67,7 @@ public class Productor extends BaseEntity {
     /**
      * Usuario asociado al productor (relación uno a uno)
      */
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", referencedColumnName = "id", nullable = false, unique = true)
     @NotNull(message = "El usuario es obligatorio")
     private Usuario usuario;

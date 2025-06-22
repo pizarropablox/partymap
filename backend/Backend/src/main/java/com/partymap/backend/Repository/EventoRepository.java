@@ -4,6 +4,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.partymap.backend.Model.Evento;
 
-public interface  EventoRepository extends JpaRepository<Evento,Long> {
+/**
+ * Repositorio para la entidad Evento.
+ * Proporciona operaciones básicas de persistencia para eventos.
+ */
+public interface EventoRepository extends JpaRepository<Evento, Long> {
 
 }

@@ -2,7 +2,6 @@ package com.partymap.backend.Controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -21,31 +20,21 @@ import org.springframework.web.bind.annotation.RestController;
 import com.partymap.backend.DTO.EventoConUbicacionDTO;
 import com.partymap.backend.DTO.EventoDTO;
 import com.partymap.backend.DTO.EventoResponseDTO;
+import com.partymap.backend.DTO.ProductorResponseDTO;
 import com.partymap.backend.DTO.UbicacionDTO;
+import com.partymap.backend.DTO.UbicacionResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Evento;
-import com.partymap.backend.Model.Productor;
 import com.partymap.backend.Model.Ubicacion;
+import com.partymap.backend.Repository.EventoRepository;
 import com.partymap.backend.Repository.ProductorRepository;
 import com.partymap.backend.Repository.UbicacionRepository;
 import com.partymap.backend.Repository.UsuarioRepository;
 import com.partymap.backend.Service.EventoService;
 
 /**
- * Controlador REST para gestionar eventos.
- * Proporciona endpoints para CRUD de eventos y operaciones especializadas.
- * 
- * ENDPOINTS:
- * - GET /evento - Obtener todos los eventos
- * - GET /evento/{id} - Obtener evento por ID
- * - POST /evento - Crear nuevo evento
- * - POST /evento/con-ubicacion - Crear evento con ubicación
- * - PUT /evento/{id} - Actualizar evento
- * - DELETE /evento/{id} - Eliminar evento
- * - GET /evento/buscar - Buscar eventos con filtros
- * - GET /evento/proximos - Obtener eventos próximos
- * - GET /evento/disponibles - Obtener eventos disponibles
- * - GET /evento/{id}/cupos - Obtener cupos disponibles
+ * Controlador REST para la gestión de eventos.
+ * Proporciona endpoints para operaciones CRUD de eventos.
  */
 @RestController
 @CrossOrigin
@@ -55,21 +44,22 @@ public class EventoController {
     private final EventoService eventoService;
     private final ProductorRepository productorRepository;
     private final UbicacionRepository ubicacionRepository;
-    private final UsuarioRepository usuarioRepository;
+
 
     public EventoController(EventoService eventoService, 
                           ProductorRepository productorRepository,
                           UbicacionRepository ubicacionRepository,
-                          UsuarioRepository usuarioRepository) {
+                          UsuarioRepository usuarioRepository,
+                          EventoRepository eventoRepository) {
         this.eventoService = eventoService;
         this.productorRepository = productorRepository;
         this.ubicacionRepository = ubicacionRepository;
-        this.usuarioRepository = usuarioRepository;
+
     }
 
     /**
-     * Obtiene todos los eventos del sistema
-     * GET /evento
+     * Obtiene todos los eventos
+     * GET /evento/all
      */
     @GetMapping("/all")
     public ResponseEntity<List<EventoResponseDTO>> getAllEventos() {
@@ -86,7 +76,7 @@ public class EventoController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<EventoResponseDTO> getEventoById(@PathVariable Long id) {
-        Optional<Evento> evento = eventoService.getEventoById(id);
+        var evento = eventoService.getEventoById(id);
         if (evento.isPresent()) {
             return ResponseEntity.ok(convertToResponseDTO(evento.get()));
         } else {
@@ -96,7 +86,7 @@ public class EventoController {
 
     /**
      * Crea un nuevo evento
-     * POST /evento
+     * POST /evento/crear
      */
     @PostMapping("/crear")
     public ResponseEntity<EventoResponseDTO> createEvento(@RequestBody EventoDTO eventoDTO) {
@@ -152,7 +142,7 @@ public class EventoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvento(@PathVariable Long id) {
         try {
-            Optional<Evento> evento = eventoService.getEventoById(id);
+            var evento = eventoService.getEventoById(id);
             if (evento.isPresent()) {
                 eventoService.deleteEvento(evento.get());
                 return ResponseEntity.noContent().build();
@@ -226,19 +216,15 @@ public class EventoController {
      */
     @GetMapping("/{id}/cupos")
     public ResponseEntity<Integer> getCuposDisponibles(@PathVariable Long id) {
-        Optional<Evento> evento = eventoService.getEventoById(id);
+        var evento = eventoService.getEventoById(id);
         if (evento.isPresent()) {
             return ResponseEntity.ok(evento.get().getCuposDisponibles());
         } else {
-            throw new NotFoundException("Evento no encontrado con ID: " + id);
+            return ResponseEntity.notFound().build();
         }
     }
 
     // Métodos de conversión privados
-
-    /**
-     * Convierte un Evento a EventoResponseDTO
-     */
     private EventoResponseDTO convertToResponseDTO(Evento evento) {
         EventoResponseDTO dto = new EventoResponseDTO();
         dto.setId(evento.getId());
@@ -251,25 +237,33 @@ public class EventoController {
         dto.setActivo(evento.getActivo());
         dto.setFechaCreacion(evento.getFechaCreacion());
         dto.setFechaModificacion(evento.getFechaModificacion());
-        
-        // Campos calculados
         dto.setCuposDisponibles(evento.getCuposDisponibles());
         dto.setDisponible(evento.isDisponible());
         dto.setEventoPasado(evento.isEventoPasado());
         dto.setEventoProximo(evento.isEventoProximo());
         
-        // TODO: Convertir ubicacion y productor a DTOs si es necesario
-        // Por ahora se dejan como null para evitar dependencias circulares
+        if (evento.getProductor() != null) {
+            ProductorResponseDTO productorDTO = new ProductorResponseDTO();
+            productorDTO.setId(evento.getProductor().getId());
+            productorDTO.setNombreEmpresa(evento.getProductor().getNombreEmpresa());
+            productorDTO.setActivo(evento.getProductor().getActivo());
+            dto.setProductor(productorDTO);
+        }
+        
+        if (evento.getUbicacion() != null) {
+            UbicacionResponseDTO ubicacionDTO = new UbicacionResponseDTO();
+            ubicacionDTO.setId(evento.getUbicacion().getId());
+            ubicacionDTO.setDireccion(evento.getUbicacion().getDireccion());
+            ubicacionDTO.setComuna(evento.getUbicacion().getComuna());
+            ubicacionDTO.setActivo(evento.getUbicacion().getActivo());
+            dto.setUbicacion(ubicacionDTO);
+        }
         
         return dto;
     }
 
-    /**
-     * Convierte un EventoDTO a Evento
-     */
     private Evento convertToEntity(EventoDTO dto) {
         Evento evento = new Evento();
-        evento.setId(dto.getId());
         evento.setNombre(dto.getNombre());
         evento.setDescripcion(dto.getDescripcion());
         evento.setFecha(dto.getFecha());
@@ -277,29 +271,21 @@ public class EventoController {
         evento.setPrecioEntrada(dto.getPrecioEntrada());
         evento.setImagenUrl(dto.getImagenUrl());
         
-        // Buscar y asignar productor por ID
         if (dto.getProductorId() != null) {
-            Productor productor = productorRepository.findById(dto.getProductorId())
-                .orElseThrow(() -> new NotFoundException("Productor no encontrado con ID: " + dto.getProductorId()));
-            evento.setProductor(productor);
+            var productor = productorRepository.findById(dto.getProductorId());
+            productor.ifPresent(evento::setProductor);
         }
         
-        // Buscar y asignar ubicación por ID (solo si no se está creando una nueva)
         if (dto.getUbicacionId() != null) {
-            Ubicacion ubicacion = ubicacionRepository.findById(dto.getUbicacionId())
-                .orElseThrow(() -> new NotFoundException("Ubicación no encontrada con ID: " + dto.getUbicacionId()));
-            evento.setUbicacion(ubicacion);
+            var ubicacion = ubicacionRepository.findById(dto.getUbicacionId());
+            ubicacion.ifPresent(evento::setUbicacion);
         }
         
         return evento;
     }
 
-    /**
-     * Convierte un UbicacionDTO a Ubicacion
-     */
     private Ubicacion convertUbicacionToEntity(UbicacionDTO dto) {
         Ubicacion ubicacion = new Ubicacion();
-        ubicacion.setId(dto.getId());
         ubicacion.setDireccion(dto.getDireccion());
         ubicacion.setComuna(dto.getComuna());
         ubicacion.setLatitud(dto.getLatitud());

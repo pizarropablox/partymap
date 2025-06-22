@@ -16,7 +16,7 @@ import com.partymap.backend.Service.EventoService;
 
 /**
  * Implementación del servicio de eventos.
- * Gestiona las operaciones CRUD de eventos y la creación automática de ubicaciones.
+ * Proporciona la lógica de negocio para la gestión de eventos.
  */
 @Service
 @Transactional
@@ -31,7 +31,7 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Obtiene todos los eventos del sistema
+     * Obtiene todos los eventos
      */
     @Override
     public List<Evento> getAllEvento() {
@@ -39,7 +39,7 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Busca un evento por su ID
+     * Obtiene un evento por su ID
      */
     @Override
     public Optional<Evento> getEventoById(Long id) {
@@ -47,37 +47,15 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Crea un nuevo evento con ubicación automática
-     * Si el evento tiene una ubicación asociada, se crea automáticamente
+     * Crea un nuevo evento
      */
     @Override
     public Evento createEvento(Evento evento) throws IOException {
-        // Si el evento tiene una ubicación, la guardamos primero
-        if (evento.getUbicacion() != null) {
-            Ubicacion ubicacion = evento.getUbicacion();
-            
-            // Validar que la ubicación tenga los datos requeridos
-            if (ubicacion.getDireccion() == null || ubicacion.getComuna() == null || 
-                ubicacion.getLatitud() == null || ubicacion.getLongitud() == null) {
-                throw new IllegalArgumentException("La ubicación debe tener dirección, comuna, latitud y longitud");
-            }
-            
-            // Validar coordenadas
-            if (!ubicacion.coordenadasValidas()) {
-                throw new IllegalArgumentException("Las coordenadas de la ubicación no son válidas");
-            }
-            
-            // Guardar la ubicación
-            Ubicacion ubicacionGuardada = ubicacionRepository.save(ubicacion);
-            evento.setUbicacion(ubicacionGuardada);
-        }
-        
-        // Guardar el evento
         return eventoRepository.save(evento);
     }
 
     /**
-     * Crea un evento con una ubicación específica
+     * Crea un evento con ubicación
      */
     @Override
     public Evento createEventoConUbicacion(Evento evento, Ubicacion ubicacion) throws IOException {

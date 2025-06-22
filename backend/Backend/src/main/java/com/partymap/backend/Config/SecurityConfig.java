@@ -24,15 +24,14 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(authorize -> authorize
                 // Configuración de seguridad para eventos
-                // GET /evento - Obtener todos los eventos (acceso público para consulta)
-                .requestMatchers(HttpMethod.GET, "/evento").permitAll()
+                // GET /evento/all - Obtener todos los eventos (acceso público para consulta)
                 .requestMatchers(HttpMethod.GET, "/evento/all").permitAll()
                 // GET /evento/{id} - Obtener evento por ID (acceso público para consulta)
                 .requestMatchers(HttpMethod.GET, "/evento/{id}").permitAll()
                 // POST /evento/crear - Crear nuevo evento (solo productores y administradores)
                 .requestMatchers(HttpMethod.POST, "/evento/crear").authenticated()
                 // POST /evento/con-ubicacion - Crear evento con ubicación (solo productores y administradores)
-                .requestMatchers(HttpMethod.POST, "/evento/con-ubicacion").permitAll()
+                .requestMatchers(HttpMethod.POST, "/evento/con-ubicacion").authenticated()
                 // PUT /evento/{id} - Actualizar evento (solo el productor propietario o administradores)
                 .requestMatchers(HttpMethod.PUT, "/evento/{id}").authenticated()
                 // DELETE /evento/{id} - Eliminar evento (solo el productor propietario o administradores)

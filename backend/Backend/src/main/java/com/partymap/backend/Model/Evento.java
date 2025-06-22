@@ -17,7 +17,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -70,7 +69,6 @@ public class Evento extends BaseEntity {
      * Fecha y hora programada para el evento
      */
     @NotNull(message = "La fecha del evento es obligatoria")
-    @Future(message = "La fecha del evento debe ser futura")
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
     
@@ -95,7 +93,7 @@ public class Evento extends BaseEntity {
     /**
      * Ubicación donde se realizará el evento
      */
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "ubicacion_id", referencedColumnName = "id", nullable = false)
     @NotNull(message = "La ubicación es obligatoria")
     private Ubicacion ubicacion;
@@ -103,7 +101,7 @@ public class Evento extends BaseEntity {
     /**
      * Productor responsable de organizar el evento
      */
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "productor_id", referencedColumnName = "id", nullable = false)
     @NotNull(message = "El productor es obligatorio")
     private Productor productor;
