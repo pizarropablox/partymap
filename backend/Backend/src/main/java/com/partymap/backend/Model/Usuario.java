@@ -12,7 +12,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -32,10 +31,7 @@ import lombok.NoArgsConstructor;
  * pueden crear y gestionar eventos.
  */
 @Entity
-@Table(name = "USUARIO", indexes = {
-    @Index(name = "idx_usuario_email", columnList = "email"),
-    @Index(name = "idx_usuario_tipo", columnList = "tipo_usuario")
-})
+@Table(name = "USUARIO")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

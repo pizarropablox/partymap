@@ -12,7 +12,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -31,12 +30,7 @@ import lombok.NoArgsConstructor;
  * y el estado de la reserva. Incluye información de precios y comentarios opcionales.
  */
 @Entity
-@Table(name = "RESERVA", indexes = {
-    @Index(name = "idx_reserva_usuario", columnList = "usuario_id"),
-    @Index(name = "idx_reserva_evento", columnList = "evento_id"),
-    @Index(name = "idx_reserva_fecha", columnList = "fecha_reserva"),
-    @Index(name = "idx_reserva_estado", columnList = "estado")
-})
+@Table(name = "RESERVA")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

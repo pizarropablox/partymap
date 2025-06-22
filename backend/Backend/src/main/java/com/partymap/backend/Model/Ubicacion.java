@@ -11,7 +11,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMax;
@@ -30,10 +29,7 @@ import lombok.NoArgsConstructor;
  * Las ubicaciones son utilizadas por los eventos para indicar dónde se realizarán.
  */
 @Entity
-@Table(name = "UBICACION", indexes = {
-    @Index(name = "idx_ubicacion_comuna", columnList = "comuna"),
-    @Index(name = "idx_ubicacion_coords", columnList = "latitud,longitud")
-})
+@Table(name = "UBICACION")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

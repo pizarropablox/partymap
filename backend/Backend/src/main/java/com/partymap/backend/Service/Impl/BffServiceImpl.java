@@ -2,19 +2,19 @@ package com.partymap.backend.Service.Impl;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.partymap.backend.RestClients.ClienteRest;
 import com.partymap.backend.Service.BffService;
-
 
 @Service
 public class BffServiceImpl implements BffService {
 
     private final ClienteRest clienteRest;
 
+	@Autowired
 	public BffServiceImpl(ClienteRest clienteRest) {
-
 		this.clienteRest = clienteRest;
 	}
 

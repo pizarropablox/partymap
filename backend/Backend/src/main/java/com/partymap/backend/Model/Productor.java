@@ -10,7 +10,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -31,10 +30,7 @@ import lombok.NoArgsConstructor;
  * asociado a un usuario del sistema.
  */
 @Entity
-@Table(name = "PRODUCTOR", indexes = {
-    @Index(name = "idx_productor_rut", columnList = "rut"),
-    @Index(name = "idx_productor_usuario", columnList = "usuario_id")
-})
+@Table(name = "PRODUCTOR")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

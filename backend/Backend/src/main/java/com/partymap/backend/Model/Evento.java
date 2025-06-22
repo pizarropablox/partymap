@@ -12,7 +12,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -31,11 +30,7 @@ import lombok.NoArgsConstructor;
  * Los eventos pueden recibir reservas de los clientes y tienen capacidad máxima opcional.
  */
 @Entity
-@Table(name = "EVENTO", indexes = {
-    @Index(name = "idx_evento_fecha", columnList = "fecha"),
-    @Index(name = "idx_evento_productor", columnList = "productor_id"),
-    @Index(name = "idx_evento_ubicacion", columnList = "ubicacion_id")
-})
+@Table(name = "EVENTO")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
