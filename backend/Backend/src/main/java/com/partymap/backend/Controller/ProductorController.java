@@ -147,6 +147,7 @@ public class ProductorController {
     /**
      * Busca productores por nombre de empresa
      * GET /productor/buscar?nombreEmpresa=Eventos
+     * ejemplo : http://localhost:8083/productor/buscar?nombreEmpresa=Empresa%20de%20Marcelo
      */
     @GetMapping("/buscar")
     public ResponseEntity<List<ProductorResponseDTO>> buscarProductores(
@@ -173,6 +174,7 @@ public class ProductorController {
     /**
      * Obtiene productores por nombre de empresa específico
      * GET /productor/empresa/{nombreEmpresa}
+     * ejemplo : http://localhost:8083/productor/empresa/Empresa%20de%20Marcelo
      */
     @GetMapping("/empresa/{nombreEmpresa}")
     public ResponseEntity<List<ProductorResponseDTO>> getProductoresByNombreEmpresa(@PathVariable String nombreEmpresa) {
