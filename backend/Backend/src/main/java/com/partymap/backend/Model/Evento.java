@@ -107,6 +107,15 @@ public class Evento extends BaseEntity {
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Reserva> reservas = new ArrayList<>();
     
+    // Setters explícitos para evitar problemas con Lombok
+    public void setProductor(Productor productor) {
+        this.productor = productor;
+    }
+    
+    public void setUbicacion(Ubicacion ubicacion) {
+        this.ubicacion = ubicacion;
+    }
+    
     /**
      * Agrega una reserva al evento y establece la relación bidireccional
      */

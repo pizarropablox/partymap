@@ -101,6 +101,31 @@ public class Reserva extends BaseEntity {
     @NotNull(message = "El evento es obligatorio")
     private Evento evento;
     
+    // Getters y setters explícitos para evitar problemas con Lombok
+    public Integer getCantidad() {
+        return cantidad;
+    }
+    
+    public void setCantidad(Integer cantidad) {
+        this.cantidad = cantidad;
+    }
+    
+    public Evento getEvento() {
+        return evento;
+    }
+    
+    public void setEvento(Evento evento) {
+        this.evento = evento;
+    }
+    
+    public Usuario getUsuario() {
+        return usuario;
+    }
+    
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+    
     /**
      * Cancela la reserva cambiando su estado a CANCELADA
      */

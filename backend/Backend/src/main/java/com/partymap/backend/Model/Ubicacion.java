@@ -83,6 +83,15 @@ public class Ubicacion extends BaseEntity {
     @OneToMany(mappedBy = "ubicacion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Evento> eventos = new ArrayList<>();
     
+    // Getters y setters explícitos para evitar problemas con Lombok
+    public List<Evento> getEventos() {
+        return eventos;
+    }
+    
+    public void setEventos(List<Evento> eventos) {
+        this.eventos = eventos;
+    }
+    
     /**
      * Agrega un evento a la lista de la ubicación y establece la relación bidireccional
      */

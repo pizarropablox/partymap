@@ -1,4 +1,3 @@
-#Dockerfile
 FROM eclipse-temurin:22-jdk AS buildstage 
 
 RUN apt-get update && apt-get install -y maven
@@ -9,15 +8,19 @@ WORKDIR /app
 COPY pom.xml .
 COPY src /app/src
 
-RUN mvn clean package
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:22-jdk 
 
-#aqui debemos asegurarnos que el nombre dee nuestro jar coincida
-COPY target/backend-0.0.1-SNAPSHOT.jar /app/backend.jar
+# Crear directorio para el wallet
+RUN mkdir -p /opt/oracle/wallet
 
-#Ubicacion y nombre del Wallet descomprimido
-COPY /Wallet_partymap /app/Wallet_partymap
+# Copiar el jar
+COPY --from=buildstage /app/target/backend-0.0.1-SNAPSHOT.jar /app/backend.jar
+
+# Copiar el wallet a la nueva ubicación y establecer permisos
+COPY Wallet_partymap/* /opt/oracle/wallet/
+RUN chmod -R 600 /opt/oracle/wallet
 
 #Puerto
 EXPOSE 8085
