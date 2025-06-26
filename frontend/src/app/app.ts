@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router'; // 👈 ESTA LÍNEA es la clave
 
 @Component({
-  selector: 'app-root',
-  imports: [RouterOutlet],
+  selector: 'html-app',
+  standalone: true,
+  imports: [RouterOutlet], // 👈 IMPORTAMOS RouterOutlet AQUÍ
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css'],
 })
-export class App {
-  protected title = 'frontend';
-}
+export class App {}

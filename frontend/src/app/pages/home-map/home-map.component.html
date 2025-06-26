@@ -1,0 +1,30 @@
+<google-map
+  height="100%"
+  width="100%"
+  [center]="mapOptions?.center || center"
+  [zoom]="mapOptions?.zoom ?? zoom"
+  [options]="mapOptions"
+>
+  <map-marker
+    *ngFor="let marker of markers"
+    [position]="marker.position"
+    [title]="marker.title"
+    (mapClick)="onMarkerClick(marker.evento)"
+  ></map-marker>
+</google-map>
+
+
+<!-- Muestra la información del evento seleccionado -->
+<!-- Muestra la información del evento seleccionado -->
+<div
+  *ngIf="selectedEvento"
+  class="evento-info"
+>
+  <h3>{{ selectedEvento.nombre }}</h3>
+  <p>{{ selectedEvento.descripcion }}</p>
+  <p><strong>Fecha:</strong> {{ selectedEvento.fecha | date }}</p>
+  <p><strong>Dirección:</strong> {{ selectedEvento.ubicacion.direccion }}</p>
+  <p><strong>Comuna:</strong> {{ selectedEvento.ubicacion.comuna }}</p>
+  <button (click)="cerrarInfo()">Cerrar</button>
+</div>
+
