@@ -27,8 +27,11 @@ import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.ReservaDTO;
 import com.partymap.backend.DTO.ReservaResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
+import com.partymap.backend.Model.Evento;
 import com.partymap.backend.Model.Reserva;
 import com.partymap.backend.Model.Usuario;
+import com.partymap.backend.Repository.EventoRepository;
+import com.partymap.backend.Repository.UsuarioRepository;
 import com.partymap.backend.Service.ReservaService;
 
 /**
@@ -48,11 +51,15 @@ public class ReservaController {
 
     private final ReservaService reservaService;
     private final SecurityUtils securityUtils;
+    private final EventoRepository eventoRepository;
+    private final UsuarioRepository usuarioRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public ReservaController(ReservaService reservaService, SecurityUtils securityUtils) {
+    public ReservaController(ReservaService reservaService, SecurityUtils securityUtils, EventoRepository eventoRepository, UsuarioRepository usuarioRepository) {
         this.reservaService = reservaService;
         this.securityUtils = securityUtils;
+        this.eventoRepository = eventoRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     /**
@@ -892,8 +899,36 @@ public class ReservaController {
         dto.setActivo(reserva.getActivo());
         dto.setFechaCreacion(reserva.getFechaCreacion());
         
-        // TODO: Convertir usuario y evento a DTOs si es necesario
-        // Por ahora se dejan como null para evitar dependencias circulares
+        // Incluir información del usuario
+        if (reserva.getUsuario() != null) {
+            com.partymap.backend.DTO.UsuarioResponseDTO usuarioDTO = new com.partymap.backend.DTO.UsuarioResponseDTO();
+            usuarioDTO.setId(reserva.getUsuario().getId());
+            usuarioDTO.setNombre(reserva.getUsuario().getNombre());
+            usuarioDTO.setEmail(reserva.getUsuario().getEmail());
+            usuarioDTO.setTipoUsuario(reserva.getUsuario().getTipoUsuario());
+            usuarioDTO.setActivo(reserva.getUsuario().getActivo());
+            usuarioDTO.setFechaCreacion(reserva.getUsuario().getFechaCreacion());
+            dto.setUsuario(usuarioDTO);
+        }
+        
+        // Incluir información del evento
+        if (reserva.getEvento() != null) {
+            com.partymap.backend.DTO.EventoResponseDTO eventoDTO = new com.partymap.backend.DTO.EventoResponseDTO();
+            eventoDTO.setId(reserva.getEvento().getId());
+            eventoDTO.setNombre(reserva.getEvento().getNombre());
+            eventoDTO.setDescripcion(reserva.getEvento().getDescripcion());
+            eventoDTO.setFecha(reserva.getEvento().getFecha());
+            eventoDTO.setCapacidadMaxima(reserva.getEvento().getCapacidadMaxima());
+            eventoDTO.setPrecioEntrada(reserva.getEvento().getPrecioEntrada());
+            eventoDTO.setImagenUrl(reserva.getEvento().getImagenUrl());
+            eventoDTO.setActivo(reserva.getEvento().getActivo());
+            eventoDTO.setFechaCreacion(reserva.getEvento().getFechaCreacion());
+            eventoDTO.setCuposDisponibles(reserva.getEvento().getCuposDisponibles());
+            eventoDTO.setDisponible(reserva.getEvento().isDisponible());
+            eventoDTO.setEventoPasado(reserva.getEvento().isEventoPasado());
+            eventoDTO.setEventoProximo(reserva.getEvento().isEventoProximo());
+            dto.setEvento(eventoDTO);
+        }
         
         return dto;
     }
@@ -908,8 +943,23 @@ public class ReservaController {
         reserva.setPrecioUnitario(dto.getPrecioUnitario());
         reserva.setComentarios(dto.getComentarios());
         
-        // TODO: Buscar y asignar usuario y evento por ID
-        // Por ahora se dejan como null para que el servicio los maneje
+        // Buscar y asignar usuario por ID
+        if (dto.getUsuarioId() != null) {
+            Optional<Usuario> usuario = usuarioRepository.findById(dto.getUsuarioId());
+            if (usuario.isEmpty()) {
+                throw new IllegalArgumentException("Usuario no encontrado con ID: " + dto.getUsuarioId());
+            }
+            reserva.setUsuario(usuario.get());
+        }
+        
+        // Buscar y asignar evento por ID
+        if (dto.getEventoId() != null) {
+            Optional<Evento> evento = eventoRepository.findById(dto.getEventoId());
+            if (evento.isEmpty()) {
+                throw new IllegalArgumentException("Evento no encontrado con ID: " + dto.getEventoId());
+            }
+            reserva.setEvento(evento.get());
+        }
         
         return reserva;
     }

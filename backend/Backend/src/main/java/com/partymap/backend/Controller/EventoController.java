@@ -2,6 +2,7 @@ package com.partymap.backend.Controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.EventoConUbicacionDTO;
 import com.partymap.backend.DTO.EventoDTO;
 import com.partymap.backend.DTO.EventoResponseDTO;
@@ -25,7 +27,9 @@ import com.partymap.backend.DTO.UbicacionDTO;
 import com.partymap.backend.DTO.UbicacionResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Evento;
+import com.partymap.backend.Model.Productor;
 import com.partymap.backend.Model.Ubicacion;
+import com.partymap.backend.Model.Usuario;
 import com.partymap.backend.Repository.EventoRepository;
 import com.partymap.backend.Repository.ProductorRepository;
 import com.partymap.backend.Repository.UbicacionRepository;
@@ -44,17 +48,18 @@ public class EventoController {
     private final EventoService eventoService;
     private final ProductorRepository productorRepository;
     private final UbicacionRepository ubicacionRepository;
-
+    private final SecurityUtils securityUtils;
 
     public EventoController(EventoService eventoService, 
                           ProductorRepository productorRepository,
                           UbicacionRepository ubicacionRepository,
                           UsuarioRepository usuarioRepository,
-                          EventoRepository eventoRepository) {
+                          EventoRepository eventoRepository,
+                          SecurityUtils securityUtils) {
         this.eventoService = eventoService;
         this.productorRepository = productorRepository;
         this.ubicacionRepository = ubicacionRepository;
-
+        this.securityUtils = securityUtils;
     }
 
     /**
@@ -108,13 +113,63 @@ public class EventoController {
     public ResponseEntity<EventoResponseDTO> createEventoConUbicacion(
             @RequestBody EventoConUbicacionDTO request) {
         try {
-            Evento evento = convertToEntity(request.getEvento());
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo productores y administradores pueden crear eventos
+            if (!user.isProductor() && !user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Crear el evento sin productor (se asignará después)
+            Evento evento = convertToEntityWithoutProductor(request.getEvento());
+            
+            // Asignar el productor
+            if (user.isAdministrador()) {
+                // Administradores pueden especificar cualquier productor o usar uno por defecto
+                if (request.getEvento().getProductorId() != null) {
+                    // Usar el productor especificado
+                    Optional<Productor> productor = productorRepository.findById(request.getEvento().getProductorId());
+                    if (productor.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(null); // Productor especificado no encontrado
+                    }
+                    evento.setProductor(productor.get());
+                } else {
+                    // Si no se especifica, buscar el primer productor disponible
+                    List<Productor> productores = productorRepository.findAll();
+                    if (productores.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(null); // No hay productores disponibles
+                    }
+                    evento.setProductor(productores.get(0));
+                }
+            } else if (user.isProductor()) {
+                // Buscar el productor asociado al usuario
+                Optional<Productor> productor = productorRepository.findByUsuarioId(user.getId());
+                if (productor.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(null); // Productor no encontrado para el usuario
+                }
+                evento.setProductor(productor.get());
+            }
+
+            // Crear la ubicación
             Ubicacion ubicacion = convertUbicacionToEntity(request.getUbicacion());
+            
+            // Crear el evento con ubicación
             Evento eventoCreado = eventoService.createEventoConUbicacion(evento, ubicacion);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertToResponseDTO(eventoCreado));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
@@ -127,11 +182,40 @@ public class EventoController {
             @PathVariable Long id,
             @RequestBody EventoDTO eventoDTO) {
         try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo productores y administradores pueden actualizar eventos
+            if (!user.isProductor() && !user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Verificar permisos (solo para productores)
+            if (user.isProductor()) {
+                Optional<Evento> existingEvento = eventoService.getEventoById(id);
+                if (existingEvento.isEmpty()) {
+                    return ResponseEntity.notFound().build();
+                }
+                
+                // Verificar que el productor sea el propietario del evento
+                Optional<Productor> userProductor = productorRepository.findByUsuarioId(user.getId());
+                if (userProductor.isEmpty() || !existingEvento.get().getProductor().getId().equals(userProductor.get().getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+            }
+
             Evento evento = convertToEntity(eventoDTO);
             Evento eventoActualizado = eventoService.updateEvento(id, evento);
             return ResponseEntity.ok(convertToResponseDTO(eventoActualizado));
         } catch (NotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
@@ -142,15 +226,38 @@ public class EventoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvento(@PathVariable Long id) {
         try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo productores y administradores pueden eliminar eventos
+            if (!user.isProductor() && !user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
             var evento = eventoService.getEventoById(id);
-            if (evento.isPresent()) {
-                eventoService.deleteEvento(evento.get());
-                return ResponseEntity.noContent().build();
-            } else {
+            if (evento.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
+
+            // Verificar permisos (solo para productores)
+            if (user.isProductor()) {
+                Optional<Productor> userProductor = productorRepository.findByUsuarioId(user.getId());
+                if (userProductor.isEmpty() || !evento.get().getProductor().getId().equals(userProductor.get().getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+            }
+
+            eventoService.deleteEvento(evento.get());
+            return ResponseEntity.noContent().build();
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
@@ -297,6 +404,18 @@ public class EventoController {
             var ubicacion = ubicacionRepository.findById(dto.getUbicacionId());
             ubicacion.ifPresent(evento::setUbicacion);
         }
+        
+        return evento;
+    }
+
+    private Evento convertToEntityWithoutProductor(EventoDTO dto) {
+        Evento evento = new Evento();
+        evento.setNombre(dto.getNombre());
+        evento.setDescripcion(dto.getDescripcion());
+        evento.setFecha(dto.getFecha());
+        evento.setCapacidadMaxima(dto.getCapacidadMaxima());
+        evento.setPrecioEntrada(dto.getPrecioEntrada());
+        evento.setImagenUrl(dto.getImagenUrl());
         
         return evento;
     }

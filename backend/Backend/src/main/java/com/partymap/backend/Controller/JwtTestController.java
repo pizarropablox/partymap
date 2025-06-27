@@ -156,4 +156,49 @@ public class JwtTestController {
         
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Endpoint para probar la validación de roles
+     */
+    @GetMapping("/test-role-validation")
+    public ResponseEntity<Map<String, Object>> testRoleValidation(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            if (authentication != null && authentication.getPrincipal() instanceof Jwt) {
+                Jwt jwt = (Jwt) authentication.getPrincipal();
+                
+                // Obtener rol original del JWT
+                String rolOriginal = jwt.getClaimAsString("extension_Roles");
+                
+                // Sincronizar usuario (esto aplicará la validación de roles)
+                Usuario usuario = usuarioService.sincronizarUsuarioDesdeJWT(jwt);
+                
+                response.put("success", true);
+                response.put("message", "Validación de roles completada");
+                response.put("rolOriginal", rolOriginal);
+                response.put("rolNormalizado", usuario.getRolAzure());
+                response.put("tipoUsuario", usuario.getTipoUsuario());
+                response.put("usuario", Map.of(
+                    "id", usuario.getId(),
+                    "email", usuario.getEmail(),
+                    "nombre", usuario.getNombre(),
+                    "tipoUsuario", usuario.getTipoUsuario(),
+                    "rolAzure", usuario.getRolAzure()
+                ));
+                
+                logger.info("Validación de roles: '{}' -> '{}' -> {}", 
+                    rolOriginal, usuario.getRolAzure(), usuario.getTipoUsuario());
+            } else {
+                response.put("success", false);
+                response.put("message", "No JWT token found");
+            }
+        } catch (Exception e) {
+            logger.error("Error en validación de roles", e);
+            response.put("success", false);
+            response.put("message", "Error en validación de roles: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
 } 

@@ -17,12 +17,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.ProductorDTO;
 import com.partymap.backend.DTO.ProductorResponseDTO;
 import com.partymap.backend.DTO.UsuarioResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Productor;
 import com.partymap.backend.Model.Usuario;
+import com.partymap.backend.Repository.ProductorRepository;
+import com.partymap.backend.Repository.UsuarioRepository;
 import com.partymap.backend.Service.ProductorService;
 import com.partymap.backend.Service.UsuarioService;
 
@@ -37,10 +40,14 @@ public class ProductorController {
 
     private final ProductorService productorService;
     private final UsuarioService usuarioService;
+    private final SecurityUtils securityUtils;
+    private final ProductorRepository productorRepository;
 
-    public ProductorController(ProductorService productorService, UsuarioService usuarioService) {
+    public ProductorController(ProductorService productorService, UsuarioService usuarioService, SecurityUtils securityUtils, ProductorRepository productorRepository) {
         this.productorService = productorService;
         this.usuarioService = usuarioService;
+        this.securityUtils = securityUtils;
+        this.productorRepository = productorRepository;
     }
 
     /**
@@ -88,15 +95,28 @@ public class ProductorController {
      * Crea un nuevo productor
      * POST /productor
      */
-    @PostMapping
+    @PostMapping ("/crear")
     public ResponseEntity<ProductorResponseDTO> createProductor(@RequestBody ProductorDTO productorDTO) {
         try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo administradores pueden crear productores
+            if (!user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
             Productor productor = convertToEntity(productorDTO);
             Productor productorCreado = productorService.createProductor(productor);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertToResponseDTO(productorCreado));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -111,34 +131,67 @@ public class ProductorController {
             @PathVariable Long id,
             @RequestBody ProductorDTO productorDTO) {
         try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo el propio productor o administradores pueden actualizar
+            if (!user.isAdministrador()) {
+                // Verificar que sea el propio productor
+                Optional<Productor> existingProductor = productorRepository.findById(id);
+                if (existingProductor.isEmpty()) {
+                    return ResponseEntity.notFound().build();
+                }
+                
+                if (!existingProductor.get().getUsuario().getId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+            }
+
             Productor productor = convertToEntity(productorDTO);
+            productor.setId(id);
             Productor productorActualizado = productorService.updateProductor(id, productor);
             return ResponseEntity.ok(convertToResponseDTO(productorActualizado));
         } catch (NotFoundException e) {
             return ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
     /**
-     * Elimina un productor (soft delete - establece activo = 0)
+     * Elimina un productor
      * DELETE /productor/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProductor(@PathVariable Long id) {
         try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo administradores pueden eliminar productores
+            if (!user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
             Optional<Productor> productor = productorService.getProductorById(id);
-            if (productor.isPresent()) {
-                productorService.deleteProductor(productor.get());
-                return ResponseEntity.noContent().build();
-            } else {
+            if (productor.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
+
+            productorService.deleteProductor(productor.get());
+            return ResponseEntity.noContent().build();
+        } catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

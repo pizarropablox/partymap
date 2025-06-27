@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ import com.partymap.backend.Service.UsuarioService;
 @Service
 @Transactional
 public class UsuarioServiceImpl implements UsuarioService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioServiceImpl.class);
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -107,13 +111,16 @@ public class UsuarioServiceImpl implements UsuarioService {
         String azureB2cId = jwt.getSubject();
         String rolAzure = jwt.getClaimAsString("extension_Roles");
 
+        // Validar y normalizar el rol
+        String rolNormalizado = validarYNormalizarRol(rolAzure);
+
         // Buscar usuario por Azure B2C ID primero
         Optional<Usuario> usuarioExistente = getUsuarioByAzureB2cId(azureB2cId);
         
         if (usuarioExistente.isPresent()) {
             // Usuario existe, actualizar información
             Usuario usuario = usuarioExistente.get();
-            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolAzure);
+            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
             return usuarioRepository.save(usuario);
         } else {
             // Buscar por email como respaldo
@@ -123,12 +130,45 @@ public class UsuarioServiceImpl implements UsuarioService {
                 // Usuario existe por email pero no tiene Azure B2C ID, actualizar
                 Usuario usuario = usuarioExistente.get();
                 usuario.setAzureB2cId(azureB2cId);
-                usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolAzure);
+                usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
                 return usuarioRepository.save(usuario);
             } else {
                 // Crear nuevo usuario
-                return findOrCreateUsuarioByEmail(email, nombreAzure, apellidoAzure, azureB2cId, rolAzure);
+                return findOrCreateUsuarioByEmail(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado);
             }
+        }
+    }
+
+    /**
+     * Valida y normaliza el rol de usuario
+     * - Convierte a mayúsculas el valor del campo extension_Roles
+     * - Valida que sea CLIENTE, ADMINISTRADOR o PRODUCTOR
+     * - Si no es válido, asigna CLIENTE por defecto
+     * 
+     * @param rolAzure Rol original del JWT (extension_Roles)
+     * @return Rol normalizado y validado
+     */
+    private String validarYNormalizarRol(String rolAzure) {
+        // Convertir a mayúsculas y eliminar espacios
+        String rolNormalizado = rolAzure.trim().toUpperCase();
+        
+        logger.debug("Validando rol: '{}' -> '{}'", rolAzure, rolNormalizado);
+        
+        // Validar que sea uno de los roles permitidos
+        switch (rolNormalizado) {
+            case "CLIENTE":
+                logger.debug("Rol CLIENTE validado correctamente");
+                return rolNormalizado;
+            case "ADMINISTRADOR":
+                logger.debug("Rol ADMINISTRADOR validado correctamente");
+                return rolNormalizado;
+            case "PRODUCTOR":
+                logger.debug("Rol PRODUCTOR validado correctamente");
+                return rolNormalizado;
+            default:
+                // Si el rol no es válido, asignar CLIENTE por defecto
+                logger.warn("Rol no válido '{}' detectado. Roles permitidos: CLIENTE, ADMINISTRADOR, PRODUCTOR. Asignando CLIENTE por defecto.", rolAzure);
+                return "CLIENTE";
         }
     }
 
@@ -137,17 +177,20 @@ public class UsuarioServiceImpl implements UsuarioService {
      */
     @Override
     public Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure) {
+        // Validar y normalizar el rol
+        String rolNormalizado = validarYNormalizarRol(rolAzure);
+        
         Optional<Usuario> usuarioExistente = getUsuarioByEmail(email);
         
         if (usuarioExistente.isPresent()) {
             // Usuario existe, actualizar información de Azure B2C
             Usuario usuario = usuarioExistente.get();
             usuario.setAzureB2cId(azureB2cId);
-            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolAzure);
+            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
             return usuarioRepository.save(usuario);
         } else {
             // Crear nuevo usuario
-            Usuario nuevoUsuario = new Usuario(email, nombreAzure, apellidoAzure, azureB2cId, rolAzure);
+            Usuario nuevoUsuario = new Usuario(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado);
             return usuarioRepository.save(nuevoUsuario);
         }
     }
