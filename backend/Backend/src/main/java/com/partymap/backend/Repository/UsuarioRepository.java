@@ -6,10 +6,16 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import com.partymap.backend.Model.TipoUsuario;
 import com.partymap.backend.Model.Usuario;
 
+/**
+ * Repositorio para la entidad Usuario.
+ * Proporciona métodos para acceder a la base de datos de usuarios.
+ */
+@Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     /**
@@ -18,9 +24,19 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
 
     /**
+     * Busca un usuario por Azure B2C ID
+     */
+    Optional<Usuario> findByAzureB2cId(String azureB2cId);
+
+    /**
      * Verifica si existe un usuario con el email especificado
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Verifica si existe un usuario con el Azure B2C ID especificado
+     */
+    boolean existsByAzureB2cId(String azureB2cId);
 
     /**
      * Busca usuarios por tipo

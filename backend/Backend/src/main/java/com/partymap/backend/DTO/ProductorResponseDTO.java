@@ -46,12 +46,23 @@ public class ProductorResponseDTO {
     private LocalDateTime fechaCreacion;
     
     /**
-     * Fecha de última modificación del productor
-     */
-    private LocalDateTime fechaModificacion;
-    
-    /**
      * Información del usuario asociado
      */
     private UsuarioResponseDTO usuario;
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombreEmpresa() { return nombreEmpresa; }
+    public String getRut() { return rut; }
+    public Integer getActivo() { return activo; }
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public UsuarioResponseDTO getUsuario() { return usuario; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombreEmpresa(String nombreEmpresa) { this.nombreEmpresa = nombreEmpresa; }
+    public void setRut(String rut) { this.rut = rut; }
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public void setUsuario(UsuarioResponseDTO usuario) { this.usuario = usuario; }
 } 

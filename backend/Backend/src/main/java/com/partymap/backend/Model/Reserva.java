@@ -15,7 +15,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -102,29 +101,40 @@ public class Reserva extends BaseEntity {
     private Evento evento;
     
     // Getters y setters explícitos para evitar problemas con Lombok
-    public Integer getCantidad() {
-        return cantidad;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     
-    public void setCantidad(Integer cantidad) {
-        this.cantidad = cantidad;
-    }
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
     
-    public Evento getEvento() {
-        return evento;
-    }
+    public LocalDateTime getFechaReserva() { return fechaReserva; }
+    public void setFechaReserva(LocalDateTime fechaReserva) { this.fechaReserva = fechaReserva; }
     
-    public void setEvento(Evento evento) {
-        this.evento = evento;
-    }
+    public BigDecimal getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
     
-    public Usuario getUsuario() {
-        return usuario;
-    }
+    public BigDecimal getPrecioTotal() { return precioTotal; }
+    public void setPrecioTotal(BigDecimal precioTotal) { this.precioTotal = precioTotal; }
     
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
+    public String getComentarios() { return comentarios; }
+    public void setComentarios(String comentarios) { this.comentarios = comentarios; }
+    
+    public EstadoReserva getEstado() { return estado; }
+    public void setEstado(EstadoReserva estado) { this.estado = estado; }
+    
+    public Evento getEvento() { return evento; }
+    public void setEvento(Evento evento) { this.evento = evento; }
+    
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    
+    // Getters heredados de BaseEntity - agregados manualmente
+    public Integer getActivo() { return this.activo; }
+    public LocalDateTime getFechaCreacion() { return this.fechaCreacion; }
+    
+    // Setters heredados de BaseEntity - agregados manualmente
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
     
     /**
      * Cancela la reserva cambiando su estado a CANCELADA
@@ -179,17 +189,6 @@ public class Reserva extends BaseEntity {
         if (estado == null) {
             estado = EstadoReserva.RESERVADA;
         }
-        actualizarPrecioTotal();
-    }
-    
-    /**
-     * Método que se ejecuta antes de actualizar una reserva existente
-     * Recalcula el precio total automáticamente
-     */
-    @PreUpdate
-    @Override
-    protected void onUpdate() {
-        super.onUpdate();
         actualizarPrecioTotal();
     }
 } 

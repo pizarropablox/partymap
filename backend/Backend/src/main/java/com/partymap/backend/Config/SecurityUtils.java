@@ -38,7 +38,33 @@ public class SecurityUtils {
         
         if (principal instanceof Jwt) {
             Jwt jwt = (Jwt) principal;
-            String email = jwt.getClaimAsString("preferred_username");
+            
+            // Intentar obtener email de diferentes claims
+            String email = null;
+            
+            // Primero intentar con 'emails' (lista)
+            try {
+                Object emailsClaim = jwt.getClaim("emails");
+                if (emailsClaim instanceof java.util.List) {
+                    java.util.List<String> emails = (java.util.List<String>) emailsClaim;
+                    if (!emails.isEmpty()) {
+                        email = emails.get(0);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignorar error y continuar con otros claims
+            }
+            
+            // Si no se encontró, intentar con 'preferred_username'
+            if (email == null) {
+                email = jwt.getClaimAsString("preferred_username");
+            }
+            
+            // Si no se encontró, intentar con 'email'
+            if (email == null) {
+                email = jwt.getClaimAsString("email");
+            }
+            
             if (email != null) {
                 return usuarioService.getUsuarioByEmail(email);
             }
@@ -62,7 +88,33 @@ public class SecurityUtils {
         
         if (principal instanceof Jwt) {
             Jwt jwt = (Jwt) principal;
-            String email = jwt.getClaimAsString("preferred_username");
+            
+            // Intentar obtener email de diferentes claims
+            String email = null;
+            
+            // Primero intentar con 'emails' (lista)
+            try {
+                Object emailsClaim = jwt.getClaim("emails");
+                if (emailsClaim instanceof java.util.List) {
+                    java.util.List<String> emails = (java.util.List<String>) emailsClaim;
+                    if (!emails.isEmpty()) {
+                        email = emails.get(0);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignorar error y continuar con otros claims
+            }
+            
+            // Si no se encontró, intentar con 'preferred_username'
+            if (email == null) {
+                email = jwt.getClaimAsString("preferred_username");
+            }
+            
+            // Si no se encontró, intentar con 'email'
+            if (email == null) {
+                email = jwt.getClaimAsString("email");
+            }
+            
             return Optional.ofNullable(email);
         }
         

@@ -1,6 +1,7 @@
 package com.partymap.backend.Model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,6 +85,21 @@ public class Ubicacion extends BaseEntity {
     private List<Evento> eventos = new ArrayList<>();
     
     // Getters y setters explícitos para evitar problemas con Lombok
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    
+    public String getComuna() { return comuna; }
+    public void setComuna(String comuna) { this.comuna = comuna; }
+    
+    public BigDecimal getLatitud() { return latitud; }
+    public void setLatitud(BigDecimal latitud) { this.latitud = latitud; }
+    
+    public BigDecimal getLongitud() { return longitud; }
+    public void setLongitud(BigDecimal longitud) { this.longitud = longitud; }
+    
     public List<Evento> getEventos() {
         return eventos;
     }
@@ -91,6 +107,15 @@ public class Ubicacion extends BaseEntity {
     public void setEventos(List<Evento> eventos) {
         this.eventos = eventos;
     }
+    
+    // Getters heredados de BaseEntity - agregados manualmente
+    public Integer getActivo() { return this.activo; }
+    public LocalDateTime getFechaCreacion() { return this.fechaCreacion; }
+    
+    // Setters heredados de BaseEntity - agregados manualmente
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
     
     /**
      * Agrega un evento a la lista de la ubicación y establece la relación bidireccional

@@ -53,8 +53,19 @@ public class UsuarioResponseDTO {
      */
     private LocalDateTime fechaCreacion;
     
-    /**
-     * Fecha de última modificación del usuario
-     */
-    private LocalDateTime fechaModificacion;
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombre() { return nombre; }
+    public String getEmail() { return email; }
+    public TipoUsuario getTipoUsuario() { return tipoUsuario; }
+    public Integer getActivo() { return activo; }
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setEmail(String email) { this.email = email; }
+    public void setTipoUsuario(TipoUsuario tipoUsuario) { this.tipoUsuario = tipoUsuario; }
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 } 

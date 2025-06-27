@@ -82,4 +82,41 @@ public class ReservaResponseDTO {
      * Información del evento para el cual se realizó la reserva
      */
     private EventoResponseDTO evento;
+    
+    // Getters y setters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+    
+    public LocalDateTime getFechaReserva() { return fechaReserva; }
+    public void setFechaReserva(LocalDateTime fechaReserva) { this.fechaReserva = fechaReserva; }
+    
+    public BigDecimal getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
+    
+    public BigDecimal getPrecioTotal() { return precioTotal; }
+    public void setPrecioTotal(BigDecimal precioTotal) { this.precioTotal = precioTotal; }
+    
+    public String getComentarios() { return comentarios; }
+    public void setComentarios(String comentarios) { this.comentarios = comentarios; }
+    
+    public EstadoReserva getEstado() { return estado; }
+    public void setEstado(EstadoReserva estado) { this.estado = estado; }
+    
+    public Integer getActivo() { return activo; }
+    public void setActivo(Integer activo) { this.activo = activo; }
+    
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    
+    public LocalDateTime getFechaModificacion() { return fechaModificacion; }
+    public void setFechaModificacion(LocalDateTime fechaModificacion) { this.fechaModificacion = fechaModificacion; }
+    
+    public UsuarioResponseDTO getUsuario() { return usuario; }
+    public void setUsuario(UsuarioResponseDTO usuario) { this.usuario = usuario; }
+    
+    public EventoResponseDTO getEvento() { return evento; }
+    public void setEvento(EventoResponseDTO evento) { this.evento = evento; }
 } 

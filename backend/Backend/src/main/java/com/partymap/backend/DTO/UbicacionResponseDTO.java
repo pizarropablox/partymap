@@ -56,8 +56,21 @@ public class UbicacionResponseDTO {
      */
     private LocalDateTime fechaCreacion;
     
-    /**
-     * Fecha de última modificación de la ubicación
-     */
-    private LocalDateTime fechaModificacion;
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getDireccion() { return direccion; }
+    public String getComuna() { return comuna; }
+    public BigDecimal getLatitud() { return latitud; }
+    public BigDecimal getLongitud() { return longitud; }
+    public Integer getActivo() { return activo; }
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setComuna(String comuna) { this.comuna = comuna; }
+    public void setLatitud(BigDecimal latitud) { this.latitud = latitud; }
+    public void setLongitud(BigDecimal longitud) { this.longitud = longitud; }
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 } 

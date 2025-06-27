@@ -55,4 +55,23 @@ public class ReservaDTO {
      */
     @NotNull(message = "El evento es obligatorio")
     private Long eventoId;
+    
+    // Getters y setters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+    
+    public BigDecimal getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
+    
+    public String getComentarios() { return comentarios; }
+    public void setComentarios(String comentarios) { this.comentarios = comentarios; }
+    
+    public Long getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+    
+    public Long getEventoId() { return eventoId; }
+    public void setEventoId(Long eventoId) { this.eventoId = eventoId; }
 } 

@@ -26,4 +26,12 @@ public class EventoConUbicacionDTO {
      * Datos de la ubicación donde se realizará el evento
      */
     private UbicacionDTO ubicacion;
+    
+    // Getters manuales para asegurar compatibilidad
+    public EventoDTO getEvento() { return evento; }
+    public UbicacionDTO getUbicacion() { return ubicacion; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setEvento(EventoDTO evento) { this.evento = evento; }
+    public void setUbicacion(UbicacionDTO ubicacion) { this.ubicacion = ubicacion; }
 } 

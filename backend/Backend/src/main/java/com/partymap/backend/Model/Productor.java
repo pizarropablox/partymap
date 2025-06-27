@@ -1,5 +1,6 @@
 package com.partymap.backend.Model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,6 +74,28 @@ public class Productor extends BaseEntity {
      */
     @OneToMany(mappedBy = "productor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Evento> eventos = new ArrayList<>();
+    
+    // Getters heredados de BaseEntity - agregados manualmente
+    public Integer getActivo() { return this.activo; }
+    public LocalDateTime getFechaCreacion() { return this.fechaCreacion; }
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombreEmpresa() { return nombreEmpresa; }
+    public String getRut() { return rut; }
+    public Usuario getUsuario() { return usuario; }
+    public List<Evento> getEventos() { return eventos; }
+    
+    // Setters heredados de BaseEntity - agregados manualmente
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombreEmpresa(String nombreEmpresa) { this.nombreEmpresa = nombreEmpresa; }
+    public void setRut(String rut) { this.rut = rut; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public void setEventos(List<Evento> eventos) { this.eventos = eventos; }
     
     /**
      * Agrega un evento a la lista del productor y establece la relación bidireccional

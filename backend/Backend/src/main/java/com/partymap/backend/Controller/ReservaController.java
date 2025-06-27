@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,40 @@ public class ReservaController {
     public ReservaController(ReservaService reservaService, SecurityUtils securityUtils) {
         this.reservaService = reservaService;
         this.securityUtils = securityUtils;
+    }
+
+    /**
+     * Endpoint de prueba para verificar el rol del usuario autenticado
+     * GET /reserva/test-auth
+     */
+    @GetMapping("/test-auth")
+    public ResponseEntity<Map<String, Object>> testAuth() {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        Optional<String> currentUserEmail = securityUtils.getCurrentUserEmail();
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        if (currentUser.isEmpty()) {
+            response.put("authenticated", false);
+            response.put("message", "Usuario no encontrado en la base de datos");
+            response.put("emailFromJWT", currentUserEmail.orElse("No encontrado"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        Usuario user = currentUser.get();
+        response.put("authenticated", true);
+        response.put("message", "Usuario autenticado correctamente");
+        response.put("userId", user.getId());
+        response.put("email", user.getEmail());
+        response.put("emailFromJWT", currentUserEmail.orElse("No encontrado"));
+        response.put("tipoUsuario", user.getTipoUsuario());
+        response.put("isCliente", user.isCliente());
+        response.put("isProductor", user.isProductor());
+        response.put("isAdministrador", user.isAdministrador());
+        response.put("azureB2cId", user.getAzureB2cId());
+        response.put("esUsuarioAzure", user.getEsUsuarioAzure());
+
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -856,7 +891,6 @@ public class ReservaController {
         dto.setEstado(reserva.getEstado());
         dto.setActivo(reserva.getActivo());
         dto.setFechaCreacion(reserva.getFechaCreacion());
-        dto.setFechaModificacion(reserva.getFechaModificacion());
         
         // TODO: Convertir usuario y evento a DTOs si es necesario
         // Por ahora se dejan como null para evitar dependencias circulares

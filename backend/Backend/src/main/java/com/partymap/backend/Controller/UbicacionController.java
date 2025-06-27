@@ -190,7 +190,6 @@ public class UbicacionController {
         dto.setLongitud(ubicacion.getLongitud());
         dto.setActivo(ubicacion.getActivo());
         dto.setFechaCreacion(ubicacion.getFechaCreacion());
-        dto.setFechaModificacion(ubicacion.getFechaModificacion());
         return dto;
     }
 

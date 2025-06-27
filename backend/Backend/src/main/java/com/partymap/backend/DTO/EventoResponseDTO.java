@@ -68,11 +68,6 @@ public class EventoResponseDTO {
     private LocalDateTime fechaCreacion;
     
     /**
-     * Fecha de última modificación del evento
-     */
-    private LocalDateTime fechaModificacion;
-    
-    /**
      * Información de la ubicación relacionada
      */
     private UbicacionResponseDTO ubicacion;
@@ -101,4 +96,38 @@ public class EventoResponseDTO {
      * Indica si el evento está próximo (en los próximos 7 días)
      */
     private Boolean eventoProximo;
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombre() { return nombre; }
+    public String getDescripcion() { return descripcion; }
+    public LocalDateTime getFecha() { return fecha; }
+    public Integer getCapacidadMaxima() { return capacidadMaxima; }
+    public BigDecimal getPrecioEntrada() { return precioEntrada; }
+    public String getImagenUrl() { return imagenUrl; }
+    public Integer getActivo() { return activo; }
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public UbicacionResponseDTO getUbicacion() { return ubicacion; }
+    public ProductorResponseDTO getProductor() { return productor; }
+    public Integer getCuposDisponibles() { return cuposDisponibles; }
+    public Boolean getDisponible() { return disponible; }
+    public Boolean getEventoPasado() { return eventoPasado; }
+    public Boolean getEventoProximo() { return eventoProximo; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public void setCapacidadMaxima(Integer capacidadMaxima) { this.capacidadMaxima = capacidadMaxima; }
+    public void setPrecioEntrada(BigDecimal precioEntrada) { this.precioEntrada = precioEntrada; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public void setUbicacion(UbicacionResponseDTO ubicacion) { this.ubicacion = ubicacion; }
+    public void setProductor(ProductorResponseDTO productor) { this.productor = productor; }
+    public void setCuposDisponibles(Integer cuposDisponibles) { this.cuposDisponibles = cuposDisponibles; }
+    public void setDisponible(Boolean disponible) { this.disponible = disponible; }
+    public void setEventoPasado(Boolean eventoPasado) { this.eventoPasado = eventoPasado; }
+    public void setEventoProximo(Boolean eventoProximo) { this.eventoProximo = eventoProximo; }
 } 

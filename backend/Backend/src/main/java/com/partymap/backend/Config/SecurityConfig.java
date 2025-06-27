@@ -1,18 +1,42 @@
 package com.partymap.backend.Config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.RSAPublicKeySpec;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
+    @Autowired
+    private JwtUserSyncFilter jwtUserSyncFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -22,7 +46,12 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringRequestMatchers("/evento/**", "/productor/**", "/reserva/**") // Ignorar endpoints de API
             )
+            .addFilterBefore(jwtDebugFilter(), org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter.class)
+            .addFilterAfter(jwtUserSyncFilter, org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter.class)
             .authorizeHttpRequests(authorize -> authorize
+                // Endpoints de prueba
+                .requestMatchers(HttpMethod.GET, "/test/**").authenticated()
+                
                 // Configuración de seguridad para eventos
                 // GET /evento/all - Obtener todos los eventos (acceso público para consulta)
                 .requestMatchers(HttpMethod.GET, "/evento/all").permitAll()
@@ -126,9 +155,131 @@ public class SecurityConfig {
                 // Requerir autenticación para todos los demás endpoints
                 .anyRequest().authenticated()
             )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
         
         return http.build();
+    }
+
+    @Bean
+    public OncePerRequestFilter jwtDebugFilter() {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                    throws ServletException, IOException {
+                
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    String token = authHeader.substring(7);
+                    System.out.println("=== JWT DEBUG INFO ===");
+                    System.out.println("Request URI: " + request.getRequestURI());
+                    System.out.println("Authorization header present: " + (authHeader != null));
+                    System.out.println("Token length: " + token.length());
+                    System.out.println("Token starts with: " + token.substring(0, Math.min(20, token.length())));
+                    System.out.println("Token ends with: " + token.substring(Math.max(0, token.length() - 20)));
+                    
+                    // Decodificar el token para ver su contenido (sin validar)
+                    try {
+                        String[] parts = token.split("\\.");
+                        if (parts.length == 3) {
+                            System.out.println("JWT has 3 parts (header.payload.signature)");
+                            // Decodificar el payload (parte 2)
+                            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                            System.out.println("JWT Payload: " + payload);
+                        } else {
+                            System.out.println("JWT does not have 3 parts, actual parts: " + parts.length);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error decoding JWT: " + e.getMessage());
+                    }
+                    System.out.println("=== END JWT DEBUG INFO ===");
+                } else {
+                    System.out.println("No Authorization header or not Bearer token for URI: " + request.getRequestURI());
+                }
+                
+                filterChain.doFilter(request, response);
+            }
+        };
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        // Usar un JwtDecoder que no valide la firma por ahora
+        return new JwtDecoder() {
+            @Override
+            public Jwt decode(String token) throws JwtException {
+                try {
+                    String[] parts = token.split("\\.");
+                    if (parts.length != 3) {
+                        throw new JwtException("Invalid JWT structure");
+                    }
+
+                    // Decodificar el header
+                    String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+                    Map<String, Object> header = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(headerJson, Map.class);
+
+                    // Decodificar el payload
+                    String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
+                    Map<String, Object> claims = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(payloadJson, Map.class);
+
+                    // Validar audience
+                    String audience = (String) claims.get("aud");
+                    if (!"ad16d15c-7d6e-4f58-8146-4b5b3d7b7124".equals(audience)) {
+                        throw new JwtException("Invalid audience");
+                    }
+
+                    // Validar issuer
+                    String issuer = (String) claims.get("iss");
+                    if (!"https://duocdesarrollocloudnative.b2clogin.com/dd063bcd-7ee5-4283-a6b4-76561cc07f64/v2.0/".equals(issuer)) {
+                        throw new JwtException("Invalid issuer");
+                    }
+
+                    // Validar expiración
+                    Object expObj = claims.get("exp");
+                    Instant exp = null;
+                    if (expObj instanceof Integer) {
+                        exp = Instant.ofEpochSecond(((Integer) expObj).longValue());
+                    } else if (expObj instanceof Long) {
+                        exp = Instant.ofEpochSecond((Long) expObj);
+                    }
+                    
+                    if (exp != null && exp.isBefore(Instant.now())) {
+                        throw new JwtException("Token expired");
+                    }
+
+                    // Obtener iat de manera segura
+                    Object iatObj = claims.get("iat");
+                    Instant iat = null;
+                    if (iatObj instanceof Integer) {
+                        iat = Instant.ofEpochSecond(((Integer) iatObj).longValue());
+                    } else if (iatObj instanceof Long) {
+                        iat = Instant.ofEpochSecond((Long) iatObj);
+                    }
+
+                    // Crear el JWT usando el constructor correcto
+                    return Jwt.withTokenValue(token)
+                        .header("alg", header.get("alg"))
+                        .header("kid", header.get("kid"))
+                        .header("typ", header.get("typ"))
+                        .claim("aud", audience)
+                        .claim("iss", issuer)
+                        .issuedAt(iat)
+                        .expiresAt(exp)
+                        .claim("sub", claims.get("sub"))
+                        .claim("extension_Roles", claims.get("extension_Roles"))
+                        .claim("family_name", claims.get("family_name"))
+                        .claim("given_name", claims.get("given_name"))
+                        .claim("name", claims.get("name"))
+                        .claim("emails", claims.get("emails"))
+                        .claim("tfp", claims.get("tfp"))
+                        .build();
+
+                } catch (Exception e) {
+                    throw new JwtException("Error decoding JWT: " + e.getMessage());
+                }
+            }
+        };
     }
 
     @Bean

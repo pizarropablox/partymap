@@ -59,4 +59,18 @@ public class UbicacionDTO {
     @DecimalMin(value = "-180.0", message = "La longitud debe estar entre -180 y 180")
     @DecimalMax(value = "180.0", message = "La longitud debe estar entre -180 y 180")
     private BigDecimal longitud;
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getDireccion() { return direccion; }
+    public String getComuna() { return comuna; }
+    public BigDecimal getLatitud() { return latitud; }
+    public BigDecimal getLongitud() { return longitud; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setComuna(String comuna) { this.comuna = comuna; }
+    public void setLatitud(BigDecimal latitud) { this.latitud = latitud; }
+    public void setLongitud(BigDecimal longitud) { this.longitud = longitud; }
 } 

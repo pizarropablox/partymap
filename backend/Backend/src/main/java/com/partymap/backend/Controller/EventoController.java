@@ -236,7 +236,6 @@ public class EventoController {
         dto.setImagenUrl(evento.getImagenUrl());
         dto.setActivo(evento.getActivo());
         dto.setFechaCreacion(evento.getFechaCreacion());
-        dto.setFechaModificacion(evento.getFechaModificacion());
         dto.setCuposDisponibles(evento.getCuposDisponibles());
         dto.setDisponible(evento.isDisponible());
         dto.setEventoPasado(evento.isEventoPasado());
@@ -249,7 +248,6 @@ public class EventoController {
             productorDTO.setRut(evento.getProductor().getRut());
             productorDTO.setActivo(evento.getProductor().getActivo());
             productorDTO.setFechaCreacion(evento.getProductor().getFechaCreacion());
-            productorDTO.setFechaModificacion(evento.getProductor().getFechaModificacion());
             
             // Incluir información completa del usuario si existe
             if (evento.getProductor().getUsuario() != null) {
@@ -260,7 +258,6 @@ public class EventoController {
                 usuarioDTO.setTipoUsuario(evento.getProductor().getUsuario().getTipoUsuario());
                 usuarioDTO.setActivo(evento.getProductor().getUsuario().getActivo());
                 usuarioDTO.setFechaCreacion(evento.getProductor().getUsuario().getFechaCreacion());
-                usuarioDTO.setFechaModificacion(evento.getProductor().getUsuario().getFechaModificacion());
                 productorDTO.setUsuario(usuarioDTO);
             }
             
@@ -276,7 +273,6 @@ public class EventoController {
             ubicacionDTO.setLongitud(evento.getUbicacion().getLongitud());
             ubicacionDTO.setActivo(evento.getUbicacion().getActivo());
             ubicacionDTO.setFechaCreacion(evento.getUbicacion().getFechaCreacion());
-            ubicacionDTO.setFechaModificacion(evento.getUbicacion().getFechaModificacion());
             dto.setUbicacion(ubicacionDTO);
         }
         

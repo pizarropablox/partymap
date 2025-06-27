@@ -217,7 +217,6 @@ public class ProductorController {
         dto.setRut(productor.getRut());
         dto.setActivo(productor.getActivo());
         dto.setFechaCreacion(productor.getFechaCreacion());
-        dto.setFechaModificacion(productor.getFechaModificacion());
         
         // Convertir usuario si existe
         if (productor.getUsuario() != null) {
@@ -260,7 +259,6 @@ public class ProductorController {
         dto.setTipoUsuario(usuario.getTipoUsuario());
         dto.setActivo(usuario.getActivo());
         dto.setFechaCreacion(usuario.getFechaCreacion());
-        dto.setFechaModificacion(usuario.getFechaModificacion());
         return dto;
     }
 } 

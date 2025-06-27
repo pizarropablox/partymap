@@ -46,4 +46,16 @@ public class ProductorDTO {
      */
     @NotNull(message = "El usuario es obligatorio")
     private Long usuarioId;
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombreEmpresa() { return nombreEmpresa; }
+    public String getRut() { return rut; }
+    public Long getUsuarioId() { return usuarioId; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombreEmpresa(String nombreEmpresa) { this.nombreEmpresa = nombreEmpresa; }
+    public void setRut(String rut) { this.rut = rut; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
 } 

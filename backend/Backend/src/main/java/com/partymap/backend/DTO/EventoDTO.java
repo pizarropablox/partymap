@@ -77,4 +77,26 @@ public class EventoDTO {
      */
     @NotNull(message = "El productor es obligatorio")
     private Long productorId;
+    
+    // Getters manuales para asegurar compatibilidad
+    public Long getId() { return id; }
+    public String getNombre() { return nombre; }
+    public String getDescripcion() { return descripcion; }
+    public LocalDateTime getFecha() { return fecha; }
+    public Integer getCapacidadMaxima() { return capacidadMaxima; }
+    public BigDecimal getPrecioEntrada() { return precioEntrada; }
+    public String getImagenUrl() { return imagenUrl; }
+    public Long getUbicacionId() { return ubicacionId; }
+    public Long getProductorId() { return productorId; }
+    
+    // Setters manuales para asegurar compatibilidad
+    public void setId(Long id) { this.id = id; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public void setCapacidadMaxima(Integer capacidadMaxima) { this.capacidadMaxima = capacidadMaxima; }
+    public void setPrecioEntrada(BigDecimal precioEntrada) { this.precioEntrada = precioEntrada; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+    public void setUbicacionId(Long ubicacionId) { this.ubicacionId = ubicacionId; }
+    public void setProductorId(Long productorId) { this.productorId = productorId; }
 } 

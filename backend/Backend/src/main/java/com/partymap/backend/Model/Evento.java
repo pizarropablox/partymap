@@ -107,14 +107,44 @@ public class Evento extends BaseEntity {
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Reserva> reservas = new ArrayList<>();
     
-    // Setters explícitos para evitar problemas con Lombok
-    public void setProductor(Productor productor) {
-        this.productor = productor;
-    }
+    // Getters y setters explícitos para evitar problemas con Lombok
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     
-    public void setUbicacion(Ubicacion ubicacion) {
-        this.ubicacion = ubicacion;
-    }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    
+    public Integer getCapacidadMaxima() { return capacidadMaxima; }
+    public void setCapacidadMaxima(Integer capacidadMaxima) { this.capacidadMaxima = capacidadMaxima; }
+    
+    public BigDecimal getPrecioEntrada() { return precioEntrada; }
+    public void setPrecioEntrada(BigDecimal precioEntrada) { this.precioEntrada = precioEntrada; }
+    
+    public String getImagenUrl() { return imagenUrl; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+    
+    public Ubicacion getUbicacion() { return ubicacion; }
+    public void setUbicacion(Ubicacion ubicacion) { this.ubicacion = ubicacion; }
+    
+    public Productor getProductor() { return productor; }
+    public void setProductor(Productor productor) { this.productor = productor; }
+    
+    public List<Reserva> getReservas() { return reservas; }
+    public void setReservas(List<Reserva> reservas) { this.reservas = reservas; }
+    
+    // Getters heredados de BaseEntity - agregados manualmente
+    public Integer getActivo() { return this.activo; }
+    public LocalDateTime getFechaCreacion() { return this.fechaCreacion; }
+    
+    // Setters heredados de BaseEntity - agregados manualmente
+    public void setActivo(Integer activo) { this.activo = activo; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
     
     /**
      * Agrega una reserva al evento y establece la relación bidireccional
