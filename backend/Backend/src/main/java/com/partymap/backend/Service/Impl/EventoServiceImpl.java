@@ -58,32 +58,75 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
-     * Crea un evento con ubicación
+     * Crea un evento con ubicación (versión alternativa sin cascade)
      */
     @Override
+    @Transactional
     public Evento createEventoConUbicacion(Evento evento, Ubicacion ubicacion) throws IOException {
-        // Validar ubicación
-        if (ubicacion == null) {
-            throw new IllegalArgumentException("La ubicación no puede ser nula");
+        try {
+            // Validar ubicación
+            if (ubicacion == null) {
+                throw new IllegalArgumentException("La ubicación no puede ser nula");
+            }
+            
+            if (ubicacion.getDireccion() == null || ubicacion.getComuna() == null || 
+                ubicacion.getLatitud() == null || ubicacion.getLongitud() == null) {
+                throw new IllegalArgumentException("La ubicación debe tener dirección, comuna, latitud y longitud");
+            }
+            
+            if (!ubicacion.coordenadasValidas()) {
+                throw new IllegalArgumentException("Las coordenadas de la ubicación no son válidas");
+            }
+            
+            // Guardar la ubicación
+            Ubicacion ubicacionGuardada = ubicacionRepository.save(ubicacion);
+            
+            // Validar evento
+            if (evento.getUsuario() == null) {
+                throw new IllegalArgumentException("El evento debe tener un usuario asignado");
+            }
+            
+            if (evento.getNombre() == null || evento.getNombre().trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre del evento es obligatorio");
+            }
+            
+            if (evento.getFecha() == null) {
+                throw new IllegalArgumentException("La fecha del evento es obligatoria");
+            }
+            
+            // Validar descripción (mínimo 10 caracteres, máximo 2000)
+            if (evento.getDescripcion() == null || evento.getDescripcion().trim().isEmpty()) {
+                throw new IllegalArgumentException("La descripción del evento es obligatoria");
+            }
+            
+            if (evento.getDescripcion().trim().length() < 10) {
+                throw new IllegalArgumentException("La descripción debe tener al menos 10 caracteres");
+            }
+            
+            if (evento.getDescripcion().trim().length() > 2000) {
+                throw new IllegalArgumentException("La descripción no puede exceder 2000 caracteres");
+            }
+            
+            // Crear una nueva instancia del evento para evitar problemas de cascade
+            Evento nuevoEvento = new Evento();
+            nuevoEvento.setNombre(evento.getNombre());
+            nuevoEvento.setDescripcion(evento.getDescripcion());
+            nuevoEvento.setFecha(evento.getFecha());
+            nuevoEvento.setCapacidadMaxima(evento.getCapacidadMaxima());
+            nuevoEvento.setPrecioEntrada(evento.getPrecioEntrada());
+            nuevoEvento.setImagenUrl(evento.getImagenUrl());
+            nuevoEvento.setUbicacion(ubicacionGuardada);
+            nuevoEvento.setUsuario(evento.getUsuario());
+            nuevoEvento.setActivo(1);
+            
+            // Guardar el evento
+            Evento eventoCreado = eventoRepository.save(nuevoEvento);
+            
+            return eventoCreado;
+            
+        } catch (Exception e) {
+            throw e;
         }
-        
-        if (ubicacion.getDireccion() == null || ubicacion.getComuna() == null || 
-            ubicacion.getLatitud() == null || ubicacion.getLongitud() == null) {
-            throw new IllegalArgumentException("La ubicación debe tener dirección, comuna, latitud y longitud");
-        }
-        
-        if (!ubicacion.coordenadasValidas()) {
-            throw new IllegalArgumentException("Las coordenadas de la ubicación no son válidas");
-        }
-        
-        // Guardar la ubicación
-        Ubicacion ubicacionGuardada = ubicacionRepository.save(ubicacion);
-        
-        // Asignar la ubicación al evento
-        evento.setUbicacion(ubicacionGuardada);
-        
-        // Guardar el evento
-        return eventoRepository.save(evento);
     }
 
     /**
@@ -119,6 +162,84 @@ public class EventoServiceImpl implements EventoService {
     }
 
     /**
+     * Actualiza un evento existente con ubicación
+     */
+    @Override
+    @Transactional
+    public Evento updateEventoConUbicacion(Long id, Evento evento, Ubicacion ubicacion) {
+        // Verificar que el evento existe
+        Optional<Evento> eventoExistente = eventoRepository.findById(id);
+        if (eventoExistente.isEmpty()) {
+            throw new NotFoundException("Evento no encontrado con ID: " + id);
+        }
+        
+        Evento eventoActual = eventoExistente.get();
+        
+        // Validar ubicación
+        if (ubicacion == null) {
+            throw new IllegalArgumentException("La ubicación no puede ser nula");
+        }
+        
+        if (ubicacion.getDireccion() == null || ubicacion.getComuna() == null || 
+            ubicacion.getLatitud() == null || ubicacion.getLongitud() == null) {
+            throw new IllegalArgumentException("La ubicación debe tener dirección, comuna, latitud y longitud");
+        }
+        
+        if (!ubicacion.coordenadasValidas()) {
+            throw new IllegalArgumentException("Las coordenadas de la ubicación no son válidas");
+        }
+        
+        // Validar evento
+        if (evento.getNombre() == null || evento.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del evento es obligatorio");
+        }
+        
+        if (evento.getFecha() == null) {
+            throw new IllegalArgumentException("La fecha del evento es obligatoria");
+        }
+        
+        // Validar descripción (mínimo 10 caracteres, máximo 2000)
+        if (evento.getDescripcion() == null || evento.getDescripcion().trim().isEmpty()) {
+            throw new IllegalArgumentException("La descripción del evento es obligatoria");
+        }
+        
+        if (evento.getDescripcion().trim().length() < 10) {
+            throw new IllegalArgumentException("La descripción debe tener al menos 10 caracteres");
+        }
+        
+        if (evento.getDescripcion().trim().length() > 2000) {
+            throw new IllegalArgumentException("La descripción no puede exceder 2000 caracteres");
+        }
+        
+        // Actualizar la ubicación existente o crear una nueva
+        Ubicacion ubicacionActualizada;
+        if (eventoActual.getUbicacion() != null) {
+            // Actualizar ubicación existente
+            Ubicacion ubicacionExistente = eventoActual.getUbicacion();
+            ubicacionExistente.setDireccion(ubicacion.getDireccion());
+            ubicacionExistente.setComuna(ubicacion.getComuna());
+            ubicacionExistente.setLatitud(ubicacion.getLatitud());
+            ubicacionExistente.setLongitud(ubicacion.getLongitud());
+            ubicacionActualizada = ubicacionRepository.save(ubicacionExistente);
+        } else {
+            // Crear nueva ubicación
+            ubicacionActualizada = ubicacionRepository.save(ubicacion);
+        }
+        
+        // Actualizar el evento
+        eventoActual.setNombre(evento.getNombre());
+        eventoActual.setDescripcion(evento.getDescripcion());
+        eventoActual.setFecha(evento.getFecha());
+        eventoActual.setCapacidadMaxima(evento.getCapacidadMaxima());
+        eventoActual.setPrecioEntrada(evento.getPrecioEntrada());
+        eventoActual.setImagenUrl(evento.getImagenUrl());
+        eventoActual.setUbicacion(ubicacionActualizada);
+        
+        // Guardar el evento actualizado
+        return eventoRepository.save(eventoActual);
+    }
+
+    /**
      * Elimina un evento del sistema (soft delete)
      */
     @Override
@@ -130,5 +251,15 @@ public class EventoServiceImpl implements EventoService {
         // Soft delete: cambiar estado activo a 0
         evento.setActivo(0);
         eventoRepository.save(evento);
+    }
+
+    /**
+     * Obtiene eventos por ID de usuario
+     */
+    @Override
+    public List<Evento> getEventosByUsuarioId(Long usuarioId) {
+        return eventoRepository.findByUsuarioId(usuarioId).stream()
+                .filter(evento -> evento.getActivo() == 1)
+                .collect(Collectors.toList());
     }
 }

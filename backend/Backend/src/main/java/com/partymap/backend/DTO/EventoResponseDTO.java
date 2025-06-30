@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTO de respuesta para Evento.
- * Contiene información completa del evento incluyendo ubicación y productor.
+ * Contiene información completa del evento incluyendo ubicación y usuario productor.
  * 
  * USO:
  * - Respuesta de consultas de evento (GET)
  * - Incluye metadatos de auditoría y estado activo
- * - Incluye información de ubicación y productor relacionados
+ * - Incluye información de ubicación y usuario productor relacionados
  * - Incluye campos calculados como cupos disponibles y disponibilidad
  */
 @Data
@@ -73,9 +73,24 @@ public class EventoResponseDTO {
     private UbicacionResponseDTO ubicacion;
     
     /**
-     * Información del productor relacionado
+     * ID del usuario productor responsable del evento
      */
-    private ProductorResponseDTO productor;
+    private Long usuarioId;
+    
+    /**
+     * Nombre del usuario productor
+     */
+    private String usuarioNombre;
+    
+    /**
+     * Email del usuario productor
+     */
+    private String usuarioEmail;
+    
+    /**
+     * RUT del usuario productor
+     */
+    private String usuarioRutProductor;
     
     /**
      * Cupos disponibles para el evento
@@ -93,7 +108,7 @@ public class EventoResponseDTO {
     private Boolean eventoPasado;
     
     /**
-     * Indica si el evento está próximo (en los próximos 7 días)
+     * Indica si el evento está próximo (en las próximas 24 horas)
      */
     private Boolean eventoProximo;
     
@@ -108,7 +123,10 @@ public class EventoResponseDTO {
     public Integer getActivo() { return activo; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public UbicacionResponseDTO getUbicacion() { return ubicacion; }
-    public ProductorResponseDTO getProductor() { return productor; }
+    public Long getUsuarioId() { return usuarioId; }
+    public String getUsuarioNombre() { return usuarioNombre; }
+    public String getUsuarioEmail() { return usuarioEmail; }
+    public String getUsuarioRutProductor() { return usuarioRutProductor; }
     public Integer getCuposDisponibles() { return cuposDisponibles; }
     public Boolean getDisponible() { return disponible; }
     public Boolean getEventoPasado() { return eventoPasado; }
@@ -125,7 +143,10 @@ public class EventoResponseDTO {
     public void setActivo(Integer activo) { this.activo = activo; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
     public void setUbicacion(UbicacionResponseDTO ubicacion) { this.ubicacion = ubicacion; }
-    public void setProductor(ProductorResponseDTO productor) { this.productor = productor; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+    public void setUsuarioNombre(String usuarioNombre) { this.usuarioNombre = usuarioNombre; }
+    public void setUsuarioEmail(String usuarioEmail) { this.usuarioEmail = usuarioEmail; }
+    public void setUsuarioRutProductor(String usuarioRutProductor) { this.usuarioRutProductor = usuarioRutProductor; }
     public void setCuposDisponibles(Integer cuposDisponibles) { this.cuposDisponibles = cuposDisponibles; }
     public void setDisponible(Boolean disponible) { this.disponible = disponible; }
     public void setEventoPasado(Boolean eventoPasado) { this.eventoPasado = eventoPasado; }

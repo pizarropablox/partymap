@@ -14,8 +14,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,6 +35,7 @@ import lombok.NoArgsConstructor;
  * - Los usuarios se crean/actualizan automáticamente al recibir un token JWT
  * - El email se usa como identificador único
  * - Los roles se mapean desde extension_Roles del JWT
+ * - El RUT del productor se obtiene desde extension_RUT del JWT
  */
 @Entity
 @Table(name = "USUARIO")
@@ -48,7 +49,8 @@ public class Usuario extends BaseEntity {
      * Identificador único del usuario
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "usuario_seq")
+    @SequenceGenerator(name = "usuario_seq", sequenceName = "USUARIO_SEQ", allocationSize = 1)
     private Long id;
     
     /**
@@ -101,6 +103,12 @@ public class Usuario extends BaseEntity {
     private String rolAzure;
     
     /**
+     * RUT del productor desde Azure B2C (extension_RUT) - solo para usuarios tipo PRODUCTOR
+     */
+    @Column(name = "rut_productor", length = 20)
+    private String rutProductor;
+    
+    /**
      * Indica si el usuario fue creado desde Azure B2C
      */
     @Column(name = "es_usuario_azure", nullable = false)
@@ -113,10 +121,10 @@ public class Usuario extends BaseEntity {
     private LocalDateTime fechaUltimaConexion;
     
     /**
-     * Relación uno a uno con Productor (solo si el usuario es productor)
+     * Lista de eventos creados por el usuario (solo si el usuario es productor)
      */
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Productor productor;
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Evento> eventos = new ArrayList<>();
     
     /**
      * Lista de reservas realizadas por el usuario
@@ -133,9 +141,10 @@ public class Usuario extends BaseEntity {
     public String getNombreAzure() { return nombreAzure; }
     public String getApellidoAzure() { return apellidoAzure; }
     public String getRolAzure() { return rolAzure; }
+    public String getRutProductor() { return rutProductor; }
     public Boolean getEsUsuarioAzure() { return esUsuarioAzure; }
     public LocalDateTime getFechaUltimaConexion() { return fechaUltimaConexion; }
-    public Productor getProductor() { return productor; }
+    public List<Evento> getEventos() { return eventos; }
     public List<Reserva> getReservas() { return reservas; }
     
     // Setters manuales para asegurar compatibilidad
@@ -147,20 +156,22 @@ public class Usuario extends BaseEntity {
     public void setNombreAzure(String nombreAzure) { this.nombreAzure = nombreAzure; }
     public void setApellidoAzure(String apellidoAzure) { this.apellidoAzure = apellidoAzure; }
     public void setRolAzure(String rolAzure) { this.rolAzure = rolAzure; }
+    public void setRutProductor(String rutProductor) { this.rutProductor = rutProductor; }
     public void setEsUsuarioAzure(Boolean esUsuarioAzure) { this.esUsuarioAzure = esUsuarioAzure; }
     public void setFechaUltimaConexion(LocalDateTime fechaUltimaConexion) { this.fechaUltimaConexion = fechaUltimaConexion; }
-    public void setProductor(Productor productor) { this.productor = productor; }
+    public void setEventos(List<Evento> eventos) { this.eventos = eventos; }
     public void setReservas(List<Reserva> reservas) { this.reservas = reservas; }
     
     /**
      * Constructor para crear usuario desde JWT de Azure B2C
      */
-    public Usuario(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure) {
+    public Usuario(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure, String rutProductor) {
         this.email = email;
         this.nombreAzure = nombreAzure;
         this.apellidoAzure = apellidoAzure;
         this.azureB2cId = azureB2cId;
         this.rolAzure = rolAzure;
+        this.rutProductor = rutProductor;
         this.esUsuarioAzure = true;
         this.fechaUltimaConexion = LocalDateTime.now();
         
@@ -180,26 +191,28 @@ public class Usuario extends BaseEntity {
             return TipoUsuario.CLIENTE; // Rol por defecto
         }
         
-        switch (rolAzure.toUpperCase()) {
+        String rolUpper = rolAzure.toUpperCase();
+        
+        switch (rolUpper) {
             case "ADMINISTRADOR":
                 return TipoUsuario.ADMINISTRADOR;
             case "PRODUCTOR":
                 return TipoUsuario.PRODUCTOR;
             case "CLIENTE":
+                return TipoUsuario.CLIENTE;
             default:
                 return TipoUsuario.CLIENTE;
         }
     }
     
     /**
-     * Actualiza la información del usuario desde JWT de Azure B2C
+     * Actualiza los datos del usuario desde Azure B2C
      */
-    public void actualizarDesdeAzureB2C(String nombreAzure, String apellidoAzure, String rolAzure) {
+    public void actualizarDesdeAzureB2C(String nombreAzure, String apellidoAzure, String rolAzure, String rutProductor) {
         this.nombreAzure = nombreAzure;
         this.apellidoAzure = apellidoAzure;
         this.rolAzure = rolAzure;
-        this.esUsuarioAzure = true;
-        this.fechaUltimaConexion = LocalDateTime.now();
+        this.rutProductor = rutProductor;
         
         // Actualizar nombre completo
         this.nombre = (nombreAzure != null ? nombreAzure : "") + 
@@ -217,7 +230,7 @@ public class Usuario extends BaseEntity {
     }
     
     /**
-     * Agrega una reserva a la lista del usuario y establece la relación bidireccional
+     * Agrega una reserva al usuario y establece la relación bidireccional
      */
     public void addReserva(Reserva reserva) {
         reservas.add(reserva);
@@ -225,7 +238,7 @@ public class Usuario extends BaseEntity {
     }
     
     /**
-     * Remueve una reserva de la lista del usuario y limpia la relación
+     * Remueve una reserva del usuario y limpia la relación
      */
     public void removeReserva(Reserva reserva) {
         reservas.remove(reserva);
@@ -233,26 +246,42 @@ public class Usuario extends BaseEntity {
     }
     
     /**
-     * Verifica si el usuario es un productor
+     * Agrega un evento al usuario y establece la relación bidireccional
+     */
+    public void addEvento(Evento evento) {
+        eventos.add(evento);
+        evento.setUsuario(this);
+    }
+    
+    /**
+     * Remueve un evento del usuario y limpia la relación
+     */
+    public void removeEvento(Evento evento) {
+        eventos.remove(evento);
+        evento.setUsuario(null);
+    }
+    
+    /**
+     * Verifica si el usuario es productor
      */
     public boolean isProductor() {
-        return TipoUsuario.PRODUCTOR.equals(tipoUsuario);
+        return tipoUsuario == TipoUsuario.PRODUCTOR;
     }
     
     /**
-     * Verifica si el usuario es un cliente
+     * Verifica si el usuario es cliente
      */
     public boolean isCliente() {
-        return TipoUsuario.CLIENTE.equals(tipoUsuario);
+        return tipoUsuario == TipoUsuario.CLIENTE;
     }
     
     /**
-     * Verifica si el usuario es un administrador
+     * Verifica si el usuario es administrador
      */
     public boolean isAdministrador() {
-        return TipoUsuario.ADMINISTRADOR.equals(tipoUsuario);
+        return tipoUsuario == TipoUsuario.ADMINISTRADOR;
     }
-
+    
     // Getters heredados de BaseEntity - agregados manualmente
     public Integer getActivo() { return this.activo; }
     public LocalDateTime getFechaCreacion() { return this.fechaCreacion; }

@@ -39,11 +39,25 @@ public interface UsuarioService {
     Optional<Usuario> getUsuarioByAzureB2cId(String azureB2cId);
     
     /**
+     * Busca un usuario productor por su RUT
+     * @param rutProductor RUT del productor a buscar
+     * @return Optional con el usuario productor si existe
+     */
+    Optional<Usuario> getProductorByRut(String rutProductor);
+    
+    /**
      * Verifica si existe un usuario con el email especificado
      * @param email Email a verificar
      * @return true si existe, false en caso contrario
      */
     boolean existsByEmail(String email);
+    
+    /**
+     * Verifica si existe un usuario productor con el RUT especificado
+     * @param rutProductor RUT del productor a verificar
+     * @return true si existe, false en caso contrario
+     */
+    boolean existsProductorByRut(String rutProductor);
     
     /**
      * Crea un nuevo usuario
@@ -61,6 +75,19 @@ public interface UsuarioService {
     void deleteUsuario(Long id);
     
     /**
+     * Obtiene todos los usuarios productores activos
+     * @return Lista de usuarios productores activos
+     */
+    List<Usuario> getAllProductores();
+    
+    /**
+     * Busca usuarios productores por nombre
+     * @param nombre Nombre a buscar
+     * @return Lista de usuarios productores que coinciden
+     */
+    List<Usuario> getProductoresByNombre(String nombre);
+    
+    /**
      * Sincroniza o crea un usuario desde JWT de Azure B2C
      * Si el usuario no existe, lo crea. Si existe, lo actualiza.
      */
@@ -69,5 +96,5 @@ public interface UsuarioService {
     /**
      * Busca un usuario por email y lo crea si no existe
      */
-    Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure);
+    Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure, String rutProductor);
 } 

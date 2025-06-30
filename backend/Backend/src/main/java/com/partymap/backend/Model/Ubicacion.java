@@ -14,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -41,7 +42,8 @@ public class Ubicacion extends BaseEntity {
      * Identificador único de la ubicación
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ubicacion_seq")
+    @SequenceGenerator(name = "ubicacion_seq", sequenceName = "UBICACION_SEQ", allocationSize = 1)
     private Long id;
     
     /**

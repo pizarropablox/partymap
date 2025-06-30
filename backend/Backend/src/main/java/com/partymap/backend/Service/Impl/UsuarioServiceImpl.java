@@ -64,11 +64,27 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     /**
+     * Busca un usuario productor por su RUT
+     */
+    @Override
+    public Optional<Usuario> getProductorByRut(String rutProductor) {
+        return usuarioRepository.findByRutProductor(rutProductor);
+    }
+
+    /**
      * Verifica si existe un usuario con el email especificado
      */
     @Override
     public boolean existsByEmail(String email) {
         return usuarioRepository.existsByEmail(email);
+    }
+
+    /**
+     * Verifica si existe un usuario productor con el RUT especificado
+     */
+    @Override
+    public boolean existsProductorByRut(String rutProductor) {
+        return usuarioRepository.existsByRutProductor(rutProductor);
     }
 
     /**
@@ -100,16 +116,54 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     /**
+     * Obtiene todos los usuarios productores activos
+     */
+    @Override
+    public List<Usuario> getAllProductores() {
+        return usuarioRepository.findProductoresActivos();
+    }
+
+    /**
+     * Busca usuarios productores por nombre
+     */
+    @Override
+    public List<Usuario> getProductoresByNombre(String nombre) {
+        return usuarioRepository.findProductoresByNombreContainingIgnoreCase(nombre);
+    }
+
+    /**
      * Sincroniza un usuario desde un JWT de Azure B2C
      */
     @Override
     public Usuario sincronizarUsuarioDesdeJWT(Jwt jwt) {
         // Extraer información del JWT
-        String email = ((List<String>) jwt.getClaim("emails")).get(0);
+        Object emailsClaim = jwt.getClaim("emails");
+        String email;
+        if (emailsClaim instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> emails = (List<String>) emailsClaim;
+            email = emails.get(0);
+        } else if (emailsClaim instanceof String) {
+            email = (String) emailsClaim;
+        } else {
+            throw new RuntimeException("Formato de email no válido en JWT");
+        }
+        
         String nombreAzure = jwt.getClaimAsString("given_name");
         String apellidoAzure = jwt.getClaimAsString("family_name");
         String azureB2cId = jwt.getSubject();
         String rolAzure = jwt.getClaimAsString("extension_Roles");
+        
+        // Extraer RUT del productor de forma segura
+        Object rutClaim = jwt.getClaim("extension_RUT");
+        String rutProductor = null;
+        if (rutClaim != null) {
+            if (rutClaim instanceof String) {
+                rutProductor = (String) rutClaim;
+            } else {
+                rutProductor = rutClaim.toString();
+            }
+        }
 
         // Validar y normalizar el rol
         String rolNormalizado = validarYNormalizarRol(rolAzure);
@@ -120,7 +174,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioExistente.isPresent()) {
             // Usuario existe, actualizar información
             Usuario usuario = usuarioExistente.get();
-            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
+            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado, rutProductor);
             return usuarioRepository.save(usuario);
         } else {
             // Buscar por email como respaldo
@@ -130,11 +184,11 @@ public class UsuarioServiceImpl implements UsuarioService {
                 // Usuario existe por email pero no tiene Azure B2C ID, actualizar
                 Usuario usuario = usuarioExistente.get();
                 usuario.setAzureB2cId(azureB2cId);
-                usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
+                usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado, rutProductor);
                 return usuarioRepository.save(usuario);
             } else {
                 // Crear nuevo usuario
-                return findOrCreateUsuarioByEmail(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado);
+                return findOrCreateUsuarioByEmail(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado, rutProductor);
             }
         }
     }
@@ -152,22 +206,16 @@ public class UsuarioServiceImpl implements UsuarioService {
         // Convertir a mayúsculas y eliminar espacios
         String rolNormalizado = rolAzure.trim().toUpperCase();
         
-        logger.debug("Validando rol: '{}' -> '{}'", rolAzure, rolNormalizado);
-        
         // Validar que sea uno de los roles permitidos
         switch (rolNormalizado) {
             case "CLIENTE":
-                logger.debug("Rol CLIENTE validado correctamente");
                 return rolNormalizado;
             case "ADMINISTRADOR":
-                logger.debug("Rol ADMINISTRADOR validado correctamente");
                 return rolNormalizado;
             case "PRODUCTOR":
-                logger.debug("Rol PRODUCTOR validado correctamente");
                 return rolNormalizado;
             default:
                 // Si el rol no es válido, asignar CLIENTE por defecto
-                logger.warn("Rol no válido '{}' detectado. Roles permitidos: CLIENTE, ADMINISTRADOR, PRODUCTOR. Asignando CLIENTE por defecto.", rolAzure);
                 return "CLIENTE";
         }
     }
@@ -176,7 +224,7 @@ public class UsuarioServiceImpl implements UsuarioService {
      * Encuentra o crea un usuario por email
      */
     @Override
-    public Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure) {
+    public Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure, String rutProductor) {
         // Validar y normalizar el rol
         String rolNormalizado = validarYNormalizarRol(rolAzure);
         
@@ -186,11 +234,11 @@ public class UsuarioServiceImpl implements UsuarioService {
             // Usuario existe, actualizar información de Azure B2C
             Usuario usuario = usuarioExistente.get();
             usuario.setAzureB2cId(azureB2cId);
-            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado);
+            usuario.actualizarDesdeAzureB2C(nombreAzure, apellidoAzure, rolNormalizado, rutProductor);
             return usuarioRepository.save(usuario);
         } else {
             // Crear nuevo usuario
-            Usuario nuevoUsuario = new Usuario(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado);
+            Usuario nuevoUsuario = new Usuario(email, nombreAzure, apellidoAzure, azureB2cId, rolNormalizado, rutProductor);
             return usuarioRepository.save(nuevoUsuario);
         }
     }

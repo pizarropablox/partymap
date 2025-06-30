@@ -53,9 +53,25 @@ public interface EventoService {
     Evento updateEvento(Long id, Evento evento);
 
     /**
+     * Actualiza un evento existente con ubicación
+     * @param id ID del evento a actualizar
+     * @param evento Datos actualizados del evento
+     * @param ubicacion Datos actualizados de la ubicación
+     * @return Evento actualizado
+     */
+    Evento updateEventoConUbicacion(Long id, Evento evento, Ubicacion ubicacion);
+
+    /**
      * Elimina un evento del sistema
      * @param evento Evento a eliminar
      * @throws IOException Si hay error en la eliminación
      */
     void deleteEvento(Evento evento) throws IOException;
+
+    /**
+     * Obtiene eventos por ID de usuario
+     * @param usuarioId ID del usuario
+     * @return Lista de eventos del usuario
+     */
+    List<Evento> getEventosByUsuarioId(Long usuarioId);
 }

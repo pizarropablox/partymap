@@ -12,7 +12,6 @@ import java.util.HashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.ReservaDTO;
 import com.partymap.backend.DTO.ReservaResponseDTO;
+import com.partymap.backend.DTO.ErrorResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Evento;
 import com.partymap.backend.Model.Reserva;
@@ -45,7 +45,6 @@ import com.partymap.backend.Service.ReservaService;
  * - ADMINISTRADOR: Acceso completo a todas las reservas
  */
 @RestController
-@CrossOrigin
 @RequestMapping("/reserva")
 public class ReservaController {
 
@@ -157,7 +156,7 @@ public class ReservaController {
 
     /**
      * Crea una nueva reserva
-     * POST /reserva
+     * POST /reserva/crear
      * 
      * SEGURIDAD:
      * - CLIENTE: Puede crear reservas
@@ -165,34 +164,157 @@ public class ReservaController {
      * - ADMINISTRADOR: Puede crear reservas
      */
     @PostMapping("/crear")
-    public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody ReservaDTO reservaDTO) {
+    public ResponseEntity<?> createReserva(@RequestBody ReservaDTO reservaDTO) {
         Optional<Usuario> currentUser = securityUtils.getCurrentUser();
         if (currentUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponseDTO(401, "Unauthorized", "Usuario no autenticado", "/reserva/crear"));
         }
 
         Usuario user = currentUser.get();
         
         // Solo clientes y administradores pueden crear reservas
         if (!user.isCliente() && !user.isAdministrador()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponseDTO(403, "Forbidden", "No tienes permisos para crear reservas", "/reserva/crear"));
         }
 
         try {
+            // Validar que el DTO no sea nulo
+            if (reservaDTO == null) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El cuerpo de la solicitud no puede estar vacío", "/reserva/crear"));
+            }
+
+            // Validaciones previas del DTO
+            if (reservaDTO.getCantidad() == null) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad no puede ser nula", "/reserva/crear"));
+            }
+            if (reservaDTO.getCantidad() <= 0) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad debe ser mayor a 0", "/reserva/crear"));
+            }
+            if (reservaDTO.getCantidad() > 50) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad máxima permitida es 50 entradas por reserva", "/reserva/crear"));
+            }
+
+            if (reservaDTO.getEventoId() == null) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El ID del evento es obligatorio", "/reserva/crear"));
+            }
+
+            // Validar que el precio unitario no sea negativo si se proporciona
+            if (reservaDTO.getPrecioUnitario() != null && reservaDTO.getPrecioUnitario().compareTo(BigDecimal.ZERO) < 0) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El precio unitario no puede ser negativo", "/reserva/crear"));
+            }
+
+            // Verificar que el evento existe
+            Optional<Evento> eventoOpt = eventoRepository.findById(reservaDTO.getEventoId());
+            if (eventoOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "Evento no encontrado con ID: " + reservaDTO.getEventoId(), "/reserva/crear"));
+            }
+
+            Evento evento = eventoOpt.get();
+
+            // Verificar que el evento esté activo
+            if (evento.getActivo() != 1) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El evento no está activo", "/reserva/crear"));
+            }
+
+            // Verificar que el evento no haya pasado
+            if (evento.isEventoPasado()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El evento ya ha pasado", "/reserva/crear"));
+            }
+
+            // Verificar que el evento esté disponible
+            if (!evento.isDisponible()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El evento no está disponible para reservas", "/reserva/crear"));
+            }
+
+            // Verificar cupos disponibles
+            if (evento.getCuposDisponibles() < reservaDTO.getCantidad()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", 
+                        "No hay suficientes cupos disponibles. Cupos disponibles: " + evento.getCuposDisponibles() + 
+                        ", Cantidad solicitada: " + reservaDTO.getCantidad(), "/reserva/crear"));
+            }
+
+            // Verificar límite de 5 reservas ACTIVAS por usuario por evento (NO incluir canceladas)
+            List<Reserva> reservasExistentes = reservaService.getReservasByUsuarioId(user.getId());
+            long totalReservasActivasUsuarioEvento = reservasExistentes.stream()
+                    .filter(r -> r.getEvento().getId().equals(reservaDTO.getEventoId()) && r.isActiva())
+                    .count();
+            
+            if (totalReservasActivasUsuarioEvento >= 5) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", 
+                        "Has alcanzado el límite máximo de 5 reservas activas para este evento", "/reserva/crear"));
+            }
+
+            // Verificar que el usuario no tenga ya una reserva activa para este evento
+            boolean yaTieneReserva = reservasExistentes.stream()
+                    .anyMatch(r -> r.getEvento().getId().equals(reservaDTO.getEventoId()) && r.isActiva());
+            
+            if (yaTieneReserva) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", 
+                        "Ya tienes una reserva activa para este evento", "/reserva/crear"));
+            }
+
+            // Verificar que el usuario existe (si se especifica)
+            if (reservaDTO.getUsuarioId() != null) {
+                Optional<Usuario> usuarioOpt = usuarioRepository.findById(reservaDTO.getUsuarioId());
+                if (usuarioOpt.isEmpty()) {
+                    return ResponseEntity.badRequest()
+                        .body(new ErrorResponseDTO(400, "Bad Request", "Usuario no encontrado con ID: " + reservaDTO.getUsuarioId(), "/reserva/crear"));
+                }
+            }
+
+            // Convertir DTO a entidad
             Reserva reserva = convertToEntity(reservaDTO);
             
             // Si es cliente, asegurar que la reserva se asigne a su usuario
             if (user.isCliente()) {
                 reserva.setUsuario(user);
             }
+
+            // Establecer precio unitario si no se especifica
+            if (reserva.getPrecioUnitario() == null) {
+                reserva.setPrecioUnitario(evento.getPrecioEntrada());
+            }
             
+            // Crear la reserva
             Reserva reservaCreada = reservaService.createReserva(reserva);
+            
+            // Convertir a DTO de respuesta
+            ReservaResponseDTO responseDTO = convertToResponseDTO(reservaCreada);
+            
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(convertToResponseDTO(reservaCreada));
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    .body(responseDTO);
+                    
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            // Log del error para debugging
+            System.err.println("Error al crear reserva: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", e.getMessage(), "/reserva/crear"));
+        } catch (IOException e) {
+            // Log del error para debugging
+            System.err.println("Error interno al crear reserva: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponseDTO(500, "Internal Server Error", "Error interno del servidor", "/reserva/crear"));
+        } catch (Exception e) {
+            // Log del error para debugging
+            System.err.println("Error inesperado al crear reserva: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponseDTO(500, "Internal Server Error", "Error inesperado del servidor", "/reserva/crear"));
         }
     }
 
@@ -880,6 +1002,131 @@ public class ReservaController {
             "reservasCanceladas", reservasCanceladas,
             "totalIngresos", totalIngresos
         ));
+    }
+
+    /**
+     * Endpoint de prueba para validar datos de reserva
+     * GET /reserva/validar?eventoId=1&cantidad=2
+     * 
+     * SEGURIDAD:
+     * - Cualquier usuario autenticado puede usar este endpoint
+     */
+    @GetMapping("/validar")
+    public ResponseEntity<Object> validarReserva(
+            @RequestParam Long eventoId,
+            @RequestParam Integer cantidad) {
+        
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponseDTO(401, "Unauthorized", "Usuario no autenticado", "/reserva/validar"));
+        }
+
+        try {
+            // Validar parámetros de entrada
+            if (eventoId == null) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "El ID del evento es obligatorio", "/reserva/validar"));
+            }
+            if (cantidad == null) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad es obligatoria", "/reserva/validar"));
+            }
+            if (cantidad <= 0) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad debe ser mayor a 0", "/reserva/validar"));
+            }
+            if (cantidad > 50) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "La cantidad máxima permitida es 50 entradas por reserva", "/reserva/validar"));
+            }
+
+            // Verificar que el evento existe
+            Optional<Evento> eventoOpt = eventoRepository.findById(eventoId);
+            if (eventoOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponseDTO(400, "Bad Request", "Evento no encontrado con ID: " + eventoId, "/reserva/validar"));
+            }
+
+            Evento evento = eventoOpt.get();
+            Usuario user = currentUser.get();
+
+            // Crear objeto de validación
+            Map<String, Object> validacion = new HashMap<>();
+            validacion.put("eventoId", eventoId);
+            validacion.put("cantidad", cantidad);
+            validacion.put("eventoExiste", true);
+            validacion.put("eventoActivo", evento.getActivo() == 1);
+            validacion.put("eventoPasado", evento.isEventoPasado());
+            validacion.put("eventoDisponible", evento.isDisponible());
+            validacion.put("cuposDisponibles", evento.getCuposDisponibles());
+            validacion.put("capacidadMaxima", evento.getCapacidadMaxima());
+            validacion.put("precioEntrada", evento.getPrecioEntrada());
+            validacion.put("usuarioActivo", user.getActivo() == 1);
+            validacion.put("usuarioTipo", user.getTipoUsuario());
+            validacion.put("puedeCrearReserva", user.isCliente() || user.isAdministrador());
+
+            // Verificar si ya tiene reserva activa para este evento
+            List<Reserva> reservasExistentes = reservaService.getReservasByUsuarioId(user.getId());
+            boolean yaTieneReserva = reservasExistentes.stream()
+                    .anyMatch(r -> r.getEvento().getId().equals(eventoId) && r.isActiva());
+            validacion.put("yaTieneReserva", yaTieneReserva);
+
+            // Verificar límite de 5 reservas ACTIVAS por usuario por evento (NO incluir canceladas)
+            long totalReservasActivasUsuarioEvento = reservasExistentes.stream()
+                    .filter(r -> r.getEvento().getId().equals(eventoId) && r.isActiva())
+                    .count();
+            validacion.put("totalReservasActivasUsuarioEvento", totalReservasActivasUsuarioEvento);
+            validacion.put("limiteReservasActivasAlcanzado", totalReservasActivasUsuarioEvento >= 5);
+
+            // Validaciones específicas
+            boolean cantidadValida = cantidad != null && cantidad > 0 && cantidad <= 50;
+            boolean cuposSuficientes = evento.getCuposDisponibles() >= cantidad;
+            boolean eventoValido = evento.getActivo() == 1 && !evento.isEventoPasado() && evento.isDisponible();
+            boolean usuarioValido = user.getActivo() == 1 && (user.isCliente() || user.isAdministrador());
+            boolean puedeReservar = !yaTieneReserva && totalReservasActivasUsuarioEvento < 5;
+
+            validacion.put("cantidadValida", cantidadValida);
+            validacion.put("cuposSuficientes", cuposSuficientes);
+            validacion.put("eventoValido", eventoValido);
+            validacion.put("usuarioValido", usuarioValido);
+            validacion.put("puedeReservar", puedeReservar);
+
+            // Resultado final
+            boolean reservaValida = cantidadValida && cuposSuficientes && eventoValido && usuarioValido && puedeReservar;
+            validacion.put("reservaValida", reservaValida);
+
+            if (reservaValida) {
+                validacion.put("mensaje", "La reserva es válida y puede ser creada");
+            } else {
+                StringBuilder mensajeError = new StringBuilder("La reserva no es válida. ");
+                if (!cantidadValida) {
+                    mensajeError.append("Cantidad inválida. ");
+                }
+                if (!cuposSuficientes) {
+                    mensajeError.append("No hay suficientes cupos disponibles. ");
+                }
+                if (!eventoValido) {
+                    mensajeError.append("Evento no válido. ");
+                }
+                if (!usuarioValido) {
+                    mensajeError.append("Usuario no válido. ");
+                }
+                if (yaTieneReserva) {
+                    mensajeError.append("Ya tienes una reserva activa para este evento. ");
+                }
+                if (totalReservasActivasUsuarioEvento >= 5) {
+                    mensajeError.append("Has alcanzado el límite máximo de 5 reservas activas para este evento. ");
+                }
+                validacion.put("mensaje", mensajeError.toString().trim());
+            }
+
+            return ResponseEntity.ok(validacion);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponseDTO(500, "Internal Server Error", "Error al validar reserva: " + e.getMessage(), "/reserva/validar"));
+        }
     }
 
     // Métodos de conversión privados

@@ -1,13 +1,17 @@
 package com.partymap.backend.Controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -200,5 +204,73 @@ public class JwtTestController {
         }
         
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint para probar la sincronización de roles
+     * GET /jwt/test/sync-roles
+     */
+    @GetMapping("/sync-roles")
+    public ResponseEntity<Map<String, Object>> testSyncRoles() {
+        try {
+            // Obtener el JWT actual
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !(authentication.getPrincipal() instanceof Jwt)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "No hay JWT válido"));
+            }
+
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            
+            // Extraer información del JWT
+            String email = ((List<String>) jwt.getClaim("emails")).get(0);
+            String rolAzure = jwt.getClaimAsString("extension_Roles");
+            String azureB2cId = jwt.getSubject();
+            
+            // Buscar usuario en la base de datos
+            Optional<Usuario> usuarioBD = usuarioService.getUsuarioByAzureB2cId(azureB2cId);
+            if (usuarioBD.isEmpty()) {
+                usuarioBD = usuarioService.getUsuarioByEmail(email);
+            }
+            
+            // Sincronizar usuario
+            Usuario usuarioSincronizado = usuarioService.sincronizarUsuarioDesdeJWT(jwt);
+            
+            // Crear respuesta detallada
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("jwt", Map.of(
+                "email", email,
+                "rolAzure", rolAzure,
+                "azureB2cId", azureB2cId
+            ));
+            
+            if (usuarioBD.isPresent()) {
+                Usuario usuarioOriginal = usuarioBD.get();
+                respuesta.put("usuarioOriginal", Map.of(
+                    "id", usuarioOriginal.getId(),
+                    "email", usuarioOriginal.getEmail(),
+                    "tipoUsuario", usuarioOriginal.getTipoUsuario(),
+                    "rolAzure", usuarioOriginal.getRolAzure(),
+                    "azureB2cId", usuarioOriginal.getAzureB2cId()
+                ));
+            }
+            
+            respuesta.put("usuarioSincronizado", Map.of(
+                "id", usuarioSincronizado.getId(),
+                "email", usuarioSincronizado.getEmail(),
+                "tipoUsuario", usuarioSincronizado.getTipoUsuario(),
+                "rolAzure", usuarioSincronizado.getRolAzure(),
+                "azureB2cId", usuarioSincronizado.getAzureB2cId()
+            ));
+            
+            respuesta.put("sincronizacionExitosa", 
+                usuarioSincronizado.getTipoUsuario().toString().equals(rolAzure));
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error en sincronización: " + e.getMessage()));
+        }
     }
 } 

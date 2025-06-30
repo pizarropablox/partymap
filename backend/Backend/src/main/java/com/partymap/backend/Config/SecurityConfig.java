@@ -49,11 +49,16 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringRequestMatchers("/evento/**", "/productor/**", "/reserva/**") // Ignorar endpoints de API
             )
-            .addFilterBefore(jwtDebugFilter(), org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter.class)
             .addFilterAfter(jwtUserSyncFilter, org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter.class)
             .authorizeHttpRequests(authorize -> authorize
+                // Endpoints de prueba de CORS (acceso público)
+                .requestMatchers(HttpMethod.GET, "/cors-test/**").permitAll()
+                
                 // Endpoints de prueba
                 .requestMatchers(HttpMethod.GET, "/test/**").authenticated()
+
+                 // GET /ubicacion/buscar 
+                .requestMatchers(HttpMethod.GET, "/ubicacion/buscar").permitAll()
                 
                 // Configuración de seguridad para eventos
                 // GET /evento/all - Obtener todos los eventos (acceso público para consulta)
@@ -154,6 +159,28 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/reserva/estadisticas").authenticated()
                 // GET /reserva/estadisticas-basicas - Solo admin/productor
                 .requestMatchers(HttpMethod.GET, "/reserva/estadisticas-basicas").authenticated()
+                // GET /reserva/validar - Validar datos de reserva (cualquier usuario autenticado)
+                .requestMatchers(HttpMethod.GET, "/reserva/validar").authenticated()
+                
+                // Configuración de seguridad para usuarios
+                // GET /usuario/current - Usuario actual (cualquier usuario autenticado)
+                .requestMatchers(HttpMethod.GET, "/usuario/current").authenticated()
+                // GET /usuario/{id} - Usuario específico (admin/productor o propio usuario)
+                .requestMatchers(HttpMethod.GET, "/usuario/{id}").authenticated()
+                // GET /usuario/email/{email} - Usuario por email (admin/productor o propio usuario)
+                .requestMatchers(HttpMethod.GET, "/usuario/email/{email}").authenticated()
+                // GET /usuario/all - Todos los usuarios (solo admin/productor)
+                .requestMatchers(HttpMethod.GET, "/usuario/all").authenticated()
+                // GET /usuario/tipo/{tipoUsuario} - Usuarios por tipo (solo admin/productor)
+                .requestMatchers(HttpMethod.GET, "/usuario/tipo/{tipoUsuario}").authenticated()
+                // GET /usuario/activos - Usuarios activos (solo admin/productor)
+                .requestMatchers(HttpMethod.GET, "/usuario/activos").authenticated()
+                // GET /usuario/inactivos - Usuarios inactivos (solo admin)
+                .requestMatchers(HttpMethod.GET, "/usuario/inactivos").authenticated()
+                // GET /usuario/buscar - Buscar usuarios (solo admin/productor)
+                .requestMatchers(HttpMethod.GET, "/usuario/buscar").authenticated()
+                // GET /usuario/estadisticas - Estadísticas de usuarios (solo admin)
+                .requestMatchers(HttpMethod.GET, "/usuario/estadisticas").authenticated()
                 
                 // Requerir autenticación para todos los demás endpoints
                 .anyRequest().authenticated()
@@ -161,47 +188,6 @@ public class SecurityConfig {
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
         
         return http.build();
-    }
-
-    @Bean
-    public OncePerRequestFilter jwtDebugFilter() {
-        return new OncePerRequestFilter() {
-            @Override
-            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-                    throws ServletException, IOException {
-                
-                String authHeader = request.getHeader("Authorization");
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    String token = authHeader.substring(7);
-                    System.out.println("=== JWT DEBUG INFO ===");
-                    System.out.println("Request URI: " + request.getRequestURI());
-                    System.out.println("Authorization header present: " + (authHeader != null));
-                    System.out.println("Token length: " + token.length());
-                    System.out.println("Token starts with: " + token.substring(0, Math.min(20, token.length())));
-                    System.out.println("Token ends with: " + token.substring(Math.max(0, token.length() - 20)));
-                    
-                    // Decodificar el token para ver su contenido (sin validar)
-                    try {
-                        String[] parts = token.split("\\.");
-                        if (parts.length == 3) {
-                            System.out.println("JWT has 3 parts (header.payload.signature)");
-                            // Decodificar el payload (parte 2)
-                            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-                            System.out.println("JWT Payload: " + payload);
-                        } else {
-                            System.out.println("JWT does not have 3 parts, actual parts: " + parts.length);
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Error decoding JWT: " + e.getMessage());
-                    }
-                    System.out.println("=== END JWT DEBUG INFO ===");
-                } else {
-                    System.out.println("No Authorization header or not Bearer token for URI: " + request.getRequestURI());
-                }
-                
-                filterChain.doFilter(request, response);
-            }
-        };
     }
 
     @Bean
@@ -271,6 +257,7 @@ public class SecurityConfig {
                         .expiresAt(exp)
                         .claim("sub", claims.get("sub"))
                         .claim("extension_Roles", claims.get("extension_Roles"))
+                        .claim("extension_RUT", claims.get("extension_RUT"))
                         .claim("family_name", claims.get("family_name"))
                         .claim("given_name", claims.get("given_name"))
                         .claim("name", claims.get("name"))
@@ -293,10 +280,46 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.Arrays.asList("*"));
-        configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
+        
+        // Permitir orígenes específicos para desarrollo
+        configuration.setAllowedOrigins(java.util.Arrays.asList(
+            "http://localhost:4200",           // Angular default port
+            "http://localhost:3000",           // React default port
+            "http://localhost:8080",           // Vue default port
+            "http://localhost:5173",           // Vite default port
+            "http://127.0.0.1:4200",          // Angular con IP
+            "http://127.0.0.1:3000",          // React con IP
+            "http://127.0.0.1:8080",          // Vue con IP
+            "http://127.0.0.1:5173"           // Vite con IP
+        ));
+        
+        // Permitir todos los métodos HTTP comunes
+        configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        // Permitir todos los headers comunes
+        configuration.setAllowedHeaders(java.util.Arrays.asList(
+            "*",
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
+        
+        // Permitir credenciales (cookies, headers de autorización, etc.)
         configuration.setAllowCredentials(true);
+        
+        // Configurar el tiempo máximo que el navegador puede cachear la respuesta preflight
+        configuration.setMaxAge(3600L);
+        
+        // Permitir headers expuestos
+        configuration.setExposedHeaders(java.util.Arrays.asList(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
+        ));
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

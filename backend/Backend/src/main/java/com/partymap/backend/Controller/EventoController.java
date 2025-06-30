@@ -1,64 +1,54 @@
 package com.partymap.backend.Controller;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.partymap.backend.Config.SecurityUtils;
 import com.partymap.backend.DTO.EventoConUbicacionDTO;
+import com.partymap.backend.DTO.EventoConUbicacionUpdateDTO;
 import com.partymap.backend.DTO.EventoDTO;
 import com.partymap.backend.DTO.EventoResponseDTO;
-import com.partymap.backend.DTO.ProductorResponseDTO;
 import com.partymap.backend.DTO.UbicacionDTO;
 import com.partymap.backend.DTO.UbicacionResponseDTO;
 import com.partymap.backend.Exceptions.NotFoundException;
 import com.partymap.backend.Model.Evento;
-import com.partymap.backend.Model.Productor;
 import com.partymap.backend.Model.Ubicacion;
 import com.partymap.backend.Model.Usuario;
 import com.partymap.backend.Repository.EventoRepository;
-import com.partymap.backend.Repository.ProductorRepository;
 import com.partymap.backend.Repository.UbicacionRepository;
 import com.partymap.backend.Repository.UsuarioRepository;
 import com.partymap.backend.Service.EventoService;
+import com.partymap.backend.Config.SecurityUtils;
 
 /**
  * Controlador REST para la gestión de eventos.
- * Proporciona endpoints para operaciones CRUD de eventos.
+ * Proporciona endpoints para crear, leer, actualizar y eliminar eventos.
+ * Incluye funcionalidades de búsqueda y filtrado.
  */
 @RestController
-@CrossOrigin
 @RequestMapping("/evento")
 public class EventoController {
 
     private final EventoService eventoService;
-    private final ProductorRepository productorRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final UsuarioRepository usuarioRepository;
     private final SecurityUtils securityUtils;
 
     public EventoController(EventoService eventoService, 
-                          ProductorRepository productorRepository,
                           UbicacionRepository ubicacionRepository,
                           UsuarioRepository usuarioRepository,
                           EventoRepository eventoRepository,
                           SecurityUtils securityUtils) {
         this.eventoService = eventoService;
-        this.productorRepository = productorRepository;
         this.ubicacionRepository = ubicacionRepository;
+        this.usuarioRepository = usuarioRepository;
         this.securityUtils = securityUtils;
     }
 
@@ -106,12 +96,13 @@ public class EventoController {
     }
 
     /**
-     * Crea un evento con ubicación específica
+     * Crea un nuevo evento con ubicación
      * POST /evento/con-ubicacion
      */
     @PostMapping("/con-ubicacion")
     public ResponseEntity<EventoResponseDTO> createEventoConUbicacion(
             @RequestBody EventoConUbicacionDTO request) {
+        
         try {
             // Verificar autenticación
             Optional<Usuario> currentUser = securityUtils.getCurrentUser();
@@ -119,53 +110,120 @@ public class EventoController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            Usuario user = currentUser.get();
-            
-            // Solo productores y administradores pueden crear eventos
-            if (!user.isProductor() && !user.isAdministrador()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            Usuario organizador = currentUser.get();
+
+            // Verificar permisos
+            if (!organizador.isProductor() && !organizador.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(null);
             }
 
-            // Crear el evento sin productor (se asignará después)
-            Evento evento = convertToEntityWithoutProductor(request.getEvento());
-            
-            // Asignar el productor
-            if (user.isAdministrador()) {
-                // Administradores pueden especificar cualquier productor o usar uno por defecto
-                if (request.getEvento().getProductorId() != null) {
-                    // Usar el productor especificado
-                    Optional<Productor> productor = productorRepository.findById(request.getEvento().getProductorId());
-                    if (productor.isEmpty()) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(null); // Productor especificado no encontrado
-                    }
-                    evento.setProductor(productor.get());
-                } else {
-                    // Si no se especifica, buscar el primer productor disponible
-                    List<Productor> productores = productorRepository.findAll();
-                    if (productores.isEmpty()) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(null); // No hay productores disponibles
-                    }
-                    evento.setProductor(productores.get(0));
-                }
-            } else if (user.isProductor()) {
-                // Buscar el productor asociado al usuario
-                Optional<Productor> productor = productorRepository.findByUsuarioId(user.getId());
-                if (productor.isEmpty()) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(null); // Productor no encontrado para el usuario
-                }
-                evento.setProductor(productor.get());
+            // Validar datos del evento antes de procesar
+            if (request.getEvento() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
             }
+
+            // Validar nombre del evento
+            String nombre = request.getEvento().getNombre();
+            if (nombre == null || nombre.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (nombre.trim().length() < 3) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (nombre.trim().length() > 100) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar fecha del evento
+            if (request.getEvento().getFecha() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar que la fecha no sea en el pasado
+            if (request.getEvento().getFecha().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar descripción del evento (mínimo 10 caracteres)
+            String descripcion = request.getEvento().getDescripcion();
+            if (descripcion == null || descripcion.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (descripcion.trim().length() < 10) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (descripcion.trim().length() > 2000) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar datos de la ubicación
+            if (request.getUbicacion() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar dirección
+            String direccion = request.getUbicacion().getDireccion();
+            if (direccion == null || direccion.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (direccion.trim().length() < 5) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar comuna
+            String comuna = request.getUbicacion().getComuna();
+            if (comuna == null || comuna.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (comuna.trim().length() < 2) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar coordenadas
+            if (request.getUbicacion().getLatitud() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (request.getUbicacion().getLongitud() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Crear el evento con el usuario organizador asignado
+            Evento evento = convertToEntityWithoutUsuario(request.getEvento());
+            evento.setUsuario(organizador);
 
             // Crear la ubicación
             Ubicacion ubicacion = convertUbicacionToEntity(request.getUbicacion());
             
             // Crear el evento con ubicación
             Evento eventoCreado = eventoService.createEventoConUbicacion(evento, ubicacion);
+            
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertToResponseDTO(eventoCreado));
+                    
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
@@ -176,6 +234,11 @@ public class EventoController {
     /**
      * Actualiza un evento existente
      * PUT /evento/{id}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede actualizar cualquier evento
+     * - PRODUCTOR: Solo puede actualizar sus propios eventos
+     * - CLIENTE: No puede actualizar eventos
      */
     @PutMapping("/{id}")
     public ResponseEntity<EventoResponseDTO> updateEvento(
@@ -202,9 +265,8 @@ public class EventoController {
                     return ResponseEntity.notFound().build();
                 }
                 
-                // Verificar que el productor sea el propietario del evento
-                Optional<Productor> userProductor = productorRepository.findByUsuarioId(user.getId());
-                if (userProductor.isEmpty() || !existingEvento.get().getProductor().getId().equals(userProductor.get().getId())) {
+                // Verificar que el usuario sea el propietario del evento
+                if (!existingEvento.get().getUsuario().getId().equals(user.getId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                 }
             }
@@ -220,10 +282,155 @@ public class EventoController {
     }
 
     /**
-     * Elimina un evento
-     * DELETE /evento/{id}
+     * Actualiza un evento existente con ubicación
+     * PUT /evento/{id}/con-ubicacion
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede actualizar cualquier evento
+     * - PRODUCTOR: Solo puede actualizar sus propios eventos
+     * - CLIENTE: No puede actualizar eventos
      */
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}/con-ubicacion")
+    public ResponseEntity<EventoResponseDTO> updateEventoConUbicacion(
+            @PathVariable Long id,
+            @RequestBody EventoConUbicacionUpdateDTO request) {
+        
+        try {
+            // Verificar autenticación
+            Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Usuario user = currentUser.get();
+            
+            // Solo productores y administradores pueden actualizar eventos
+            if (!user.isProductor() && !user.isAdministrador()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Verificar permisos (solo para productores)
+            if (user.isProductor()) {
+                Optional<Evento> existingEvento = eventoService.getEventoById(id);
+                if (existingEvento.isEmpty()) {
+                    return ResponseEntity.notFound().build();
+                }
+                
+                // Verificar que el usuario sea el propietario del evento
+                if (!existingEvento.get().getUsuario().getId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+            }
+
+            // Validar datos del evento antes de procesar
+            if (request.getEvento() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar nombre del evento
+            String nombre = request.getEvento().getNombre();
+            if (nombre == null || nombre.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (nombre.trim().length() < 3) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (nombre.trim().length() > 100) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar fecha del evento
+            if (request.getEvento().getFecha() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar que la fecha no sea en el pasado
+            if (request.getEvento().getFecha().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar descripción del evento (mínimo 10 caracteres)
+            String descripcion = request.getEvento().getDescripcion();
+            if (descripcion == null || descripcion.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (descripcion.trim().length() < 10) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (descripcion.trim().length() > 2000) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar datos de la ubicación
+            if (request.getUbicacion() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar dirección
+            String direccion = request.getUbicacion().getDireccion();
+            if (direccion == null || direccion.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (direccion.trim().length() < 5) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Validar comuna
+            String comuna = request.getUbicacion().getComuna();
+            if (comuna == null || comuna.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            if (comuna.trim().length() < 2) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Convertir DTOs a entidades
+            Evento evento = convertToEntity(request.getEvento());
+            Ubicacion ubicacion = convertUbicacionToEntity(request.getUbicacion());
+
+            // Actualizar evento con ubicación
+            Evento eventoActualizado = eventoService.updateEventoConUbicacion(id, evento, ubicacion);
+            return ResponseEntity.ok(convertToResponseDTO(eventoActualizado));
+            
+        } catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Elimina un evento (soft delete)
+     * DELETE /evento/{id}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede eliminar cualquier evento
+     * - PRODUCTOR: Solo puede eliminar sus propios eventos
+     * - CLIENTE: No puede eliminar eventos
+     */
+    @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> deleteEvento(@PathVariable Long id) {
         try {
             // Verificar autenticación
@@ -239,15 +446,15 @@ public class EventoController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            var evento = eventoService.getEventoById(id);
+            // Buscar el evento a eliminar
+            Optional<Evento> evento = eventoService.getEventoById(id);
             if (evento.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
             // Verificar permisos (solo para productores)
             if (user.isProductor()) {
-                Optional<Productor> userProductor = productorRepository.findByUsuarioId(user.getId());
-                if (userProductor.isEmpty() || !evento.get().getProductor().getId().equals(userProductor.get().getId())) {
+                if (!evento.get().getUsuario().getId().equals(user.getId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                 }
             }
@@ -256,8 +463,6 @@ public class EventoController {
             return ResponseEntity.noContent().build();
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
@@ -269,20 +474,38 @@ public class EventoController {
     public ResponseEntity<List<EventoResponseDTO>> buscarEventos(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String comuna,
-            @RequestParam(required = false) Long productorId,
+            @RequestParam(required = false) Long usuarioId,
             @RequestParam(required = false) Boolean soloDisponibles) {
         
         List<Evento> eventos = eventoService.getAllEvento();
         
         // Aplicar filtros
-        List<Evento> eventosFiltrados = eventos.stream()
-                .filter(evento -> nombre == null || evento.getNombre().toLowerCase().contains(nombre.toLowerCase()))
-                .filter(evento -> comuna == null || evento.getUbicacion().getComuna().toLowerCase().contains(comuna.toLowerCase()))
-                .filter(evento -> productorId == null || evento.getProductor().getId().equals(productorId))
-                .filter(evento -> soloDisponibles == null || !soloDisponibles || evento.isDisponible())
-                .collect(Collectors.toList());
+        if (nombre != null) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getNombre().toLowerCase().contains(nombre.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
         
-        List<EventoResponseDTO> eventosDTO = eventosFiltrados.stream()
+        if (comuna != null) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getUbicacion() != null && 
+                            evento.getUbicacion().getComuna().toLowerCase().contains(comuna.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        
+        if (usuarioId != null) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getUsuario() != null && evento.getUsuario().getId().equals(usuarioId))
+                    .collect(Collectors.toList());
+        }
+        
+        if (soloDisponibles != null && soloDisponibles) {
+            eventos = eventos.stream()
+                    .filter(Evento::isDisponible)
+                    .collect(Collectors.toList());
+        }
+        
+        List<EventoResponseDTO> eventosDTO = eventos.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
         
@@ -290,48 +513,312 @@ public class EventoController {
     }
 
     /**
-     * Obtiene eventos próximos (en los próximos 7 días)
+     * Obtiene eventos próximos (en las próximas 24 horas)
      * GET /evento/proximos
      */
     @GetMapping("/proximos")
     public ResponseEntity<List<EventoResponseDTO>> getEventosProximos() {
         List<Evento> eventos = eventoService.getAllEvento();
-        List<EventoResponseDTO> eventosProximos = eventos.stream()
+        List<EventoResponseDTO> eventosDTO = eventos.stream()
                 .filter(Evento::isEventoProximo)
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(eventosProximos);
+        
+        return ResponseEntity.ok(eventosDTO);
     }
 
     /**
-     * Obtiene eventos disponibles (con cupos y no pasados)
+     * Obtiene eventos disponibles para reservas
      * GET /evento/disponibles
      */
     @GetMapping("/disponibles")
     public ResponseEntity<List<EventoResponseDTO>> getEventosDisponibles() {
         List<Evento> eventos = eventoService.getAllEvento();
-        List<EventoResponseDTO> eventosDisponibles = eventos.stream()
+        List<EventoResponseDTO> eventosDTO = eventos.stream()
                 .filter(Evento::isDisponible)
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(eventosDisponibles);
+        
+        return ResponseEntity.ok(eventosDTO);
     }
 
     /**
-     * Obtiene cupos disponibles de un evento
+     * Obtiene cupos disponibles para un evento
      * GET /evento/{id}/cupos
      */
     @GetMapping("/{id}/cupos")
     public ResponseEntity<Integer> getCuposDisponibles(@PathVariable Long id) {
-        var evento = eventoService.getEventoById(id);
-        if (evento.isPresent()) {
-            return ResponseEntity.ok(evento.get().getCuposDisponibles());
-        } else {
-            return ResponseEntity.notFound().build();
+        Optional<Evento> evento = eventoService.getEventoById(id);
+        if (evento.isEmpty()) {
+            throw new NotFoundException("Evento no encontrado con ID: " + id);
         }
+        
+        return ResponseEntity.ok(evento.get().getCuposDisponibles());
     }
 
-    // Métodos de conversión privados
+    /**
+     * Obtiene eventos de un usuario productor específico
+     * GET /evento/usuario/{usuarioId}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver eventos de cualquier productor
+     * - PRODUCTOR: Solo puede ver sus propios eventos
+     * - CLIENTE: Puede ver eventos de cualquier productor
+     */
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<EventoResponseDTO>> getEventosPorUsuario(@PathVariable Long usuarioId) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Verificar que el usuario existe y es productor
+        Optional<Usuario> usuarioProductor = usuarioRepository.findById(usuarioId);
+        if (usuarioProductor.isEmpty() || !usuarioProductor.get().isProductor()) {
+            throw new NotFoundException("Usuario productor no encontrado con ID: " + usuarioId);
+        }
+
+        // Verificar permisos
+        if (user.isProductor() && !user.getId().equals(usuarioId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Evento> eventos = eventoService.getAllEvento();
+        List<Evento> eventosUsuario = eventos.stream()
+                .filter(evento -> evento.getUsuario() != null &&
+                        evento.getUsuario().getId().equals(usuarioId))
+                .collect(Collectors.toList());
+        
+        List<EventoResponseDTO> eventosDTO = eventosUsuario.stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(eventosDTO);
+    }
+
+    /**
+     * Obtiene eventos de un usuario productor específico
+     * GET /evento/productor/{id}
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver eventos de cualquier productor
+     * - PRODUCTOR: Solo puede ver sus propios eventos
+     * - CLIENTE: Puede ver eventos de cualquier productor
+     */
+    @GetMapping("/productor/{id}")
+    public ResponseEntity<List<EventoResponseDTO>> getEventosPorProductor(@PathVariable Long id) {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Verificar que el usuario existe y es productor
+        Optional<Usuario> usuarioProductor = usuarioRepository.findById(id);
+        if (usuarioProductor.isEmpty() || !usuarioProductor.get().isProductor()) {
+            throw new NotFoundException("Usuario productor no encontrado con ID: " + id);
+        }
+
+        // Verificar permisos de acceso
+        if (user.isProductor() && !user.getId().equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Evento> eventos = eventoService.getEventosByUsuarioId(id);
+        List<EventoResponseDTO> eventosDTO = eventos.stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(eventosDTO);
+    }
+
+    /**
+     * Obtiene eventos del usuario autenticado
+     * GET /evento/mis-eventos
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver todos los eventos
+     * - PRODUCTOR: Solo puede ver sus propios eventos
+     * - CLIENTE: No puede ver eventos
+     */
+    @GetMapping("/mis-eventos")
+    public ResponseEntity<List<EventoResponseDTO>> getMisEventos() {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden ver eventos
+        if (!user.isAdministrador() && !user.isProductor()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Evento> eventos = eventoService.getAllEvento();
+        
+        if (user.isAdministrador()) {
+            // Administradores ven todos los eventos
+            List<EventoResponseDTO> eventosDTO = eventos.stream()
+                    .map(this::convertToResponseDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(eventosDTO);
+        } else if (user.isProductor()) {
+            // Productores solo ven sus propios eventos
+            List<Evento> misEventos = eventos.stream()
+                    .filter(evento -> evento.getUsuario() != null &&
+                            evento.getUsuario().getId().equals(user.getId()))
+                    .collect(Collectors.toList());
+            
+            List<EventoResponseDTO> eventosDTO = misEventos.stream()
+                    .map(this::convertToResponseDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(eventosDTO);
+        }
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    /**
+     * Obtiene estadísticas de eventos del usuario autenticado
+     * GET /evento/mis-estadisticas
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede ver estadísticas de todos los eventos
+     * - PRODUCTOR: Solo puede ver estadísticas de sus propios eventos
+     * - CLIENTE: No puede ver estadísticas
+     */
+    @GetMapping("/mis-estadisticas")
+    public ResponseEntity<Object> getMisEstadisticas() {
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden ver estadísticas
+        if (!user.isAdministrador() && !user.isProductor()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Evento> eventos = eventoService.getAllEvento();
+        
+        if (user.isProductor()) {
+            // Filtrar solo eventos del productor
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getUsuario() != null &&
+                            evento.getUsuario().getId().equals(user.getId()))
+                    .collect(Collectors.toList());
+        }
+
+        long totalEventos = eventos.size();
+        long eventosActivos = eventos.stream().filter(e -> e.getActivo() == 1).count();
+        long eventosInactivos = eventos.stream().filter(e -> e.getActivo() == 0).count();
+        long eventosDisponibles = eventos.stream().filter(Evento::isDisponible).count();
+        long eventosProximos = eventos.stream().filter(Evento::isEventoProximo).count();
+        long eventosPasados = eventos.stream().filter(Evento::isEventoPasado).count();
+        
+        return ResponseEntity.ok(java.util.Map.of(
+            "totalEventos", totalEventos,
+            "eventosActivos", eventosActivos,
+            "eventosInactivos", eventosInactivos,
+            "eventosDisponibles", eventosDisponibles,
+            "eventosProximos", eventosProximos,
+            "eventosPasados", eventosPasados
+        ));
+    }
+
+    /**
+     * Busca eventos del usuario autenticado con filtros
+     * GET /evento/mis-eventos/buscar
+     * 
+     * SEGURIDAD:
+     * - ADMINISTRADOR: Puede buscar en todos los eventos
+     * - PRODUCTOR: Solo puede buscar en sus propios eventos
+     * - CLIENTE: No puede buscar eventos
+     */
+    @GetMapping("/mis-eventos/buscar")
+    public ResponseEntity<List<EventoResponseDTO>> buscarMisEventos(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String comuna,
+            @RequestParam(required = false) Boolean soloActivos,
+            @RequestParam(required = false) Boolean soloDisponibles,
+            @RequestParam(required = false) Boolean soloProximos,
+            @RequestParam(required = false) Boolean soloPasados) {
+        
+        Optional<Usuario> currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Usuario user = currentUser.get();
+        
+        // Solo administradores y productores pueden buscar eventos
+        if (!user.isAdministrador() && !user.isProductor()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Evento> eventos = eventoService.getAllEvento();
+        
+        // Filtrar por usuario si es productor
+        if (user.isProductor()) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getUsuario() != null &&
+                            evento.getUsuario().getId().equals(user.getId()))
+                    .collect(Collectors.toList());
+        }
+        
+        // Aplicar filtros adicionales
+        if (nombre != null) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getNombre().toLowerCase().contains(nombre.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        
+        if (comuna != null) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getUbicacion() != null && 
+                            evento.getUbicacion().getComuna().toLowerCase().contains(comuna.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        
+        if (soloActivos != null && soloActivos) {
+            eventos = eventos.stream()
+                    .filter(evento -> evento.getActivo() == 1)
+                    .collect(Collectors.toList());
+        }
+        
+        if (soloDisponibles != null && soloDisponibles) {
+            eventos = eventos.stream()
+                    .filter(Evento::isDisponible)
+                    .collect(Collectors.toList());
+        }
+        
+        if (soloProximos != null && soloProximos) {
+            eventos = eventos.stream()
+                    .filter(Evento::isEventoProximo)
+                    .collect(Collectors.toList());
+        }
+        
+        if (soloPasados != null && soloPasados) {
+            eventos = eventos.stream()
+                    .filter(Evento::isEventoPasado)
+                    .collect(Collectors.toList());
+        }
+        
+        List<EventoResponseDTO> eventosDTO = eventos.stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(eventosDTO);
+    }
+
+    /**
+     * Convierte un Evento a EventoResponseDTO
+     */
     private EventoResponseDTO convertToResponseDTO(Evento evento) {
         EventoResponseDTO dto = new EventoResponseDTO();
         dto.setId(evento.getId());
@@ -343,34 +830,8 @@ public class EventoController {
         dto.setImagenUrl(evento.getImagenUrl());
         dto.setActivo(evento.getActivo());
         dto.setFechaCreacion(evento.getFechaCreacion());
-        dto.setCuposDisponibles(evento.getCuposDisponibles());
-        dto.setDisponible(evento.isDisponible());
-        dto.setEventoPasado(evento.isEventoPasado());
-        dto.setEventoProximo(evento.isEventoProximo());
         
-        if (evento.getProductor() != null) {
-            ProductorResponseDTO productorDTO = new ProductorResponseDTO();
-            productorDTO.setId(evento.getProductor().getId());
-            productorDTO.setNombreEmpresa(evento.getProductor().getNombreEmpresa());
-            productorDTO.setRut(evento.getProductor().getRut());
-            productorDTO.setActivo(evento.getProductor().getActivo());
-            productorDTO.setFechaCreacion(evento.getProductor().getFechaCreacion());
-            
-            // Incluir información completa del usuario si existe
-            if (evento.getProductor().getUsuario() != null) {
-                com.partymap.backend.DTO.UsuarioResponseDTO usuarioDTO = new com.partymap.backend.DTO.UsuarioResponseDTO();
-                usuarioDTO.setId(evento.getProductor().getUsuario().getId());
-                usuarioDTO.setNombre(evento.getProductor().getUsuario().getNombre());
-                usuarioDTO.setEmail(evento.getProductor().getUsuario().getEmail());
-                usuarioDTO.setTipoUsuario(evento.getProductor().getUsuario().getTipoUsuario());
-                usuarioDTO.setActivo(evento.getProductor().getUsuario().getActivo());
-                usuarioDTO.setFechaCreacion(evento.getProductor().getUsuario().getFechaCreacion());
-                productorDTO.setUsuario(usuarioDTO);
-            }
-            
-            dto.setProductor(productorDTO);
-        }
-        
+        // Convertir ubicación
         if (evento.getUbicacion() != null) {
             UbicacionResponseDTO ubicacionDTO = new UbicacionResponseDTO();
             ubicacionDTO.setId(evento.getUbicacion().getId());
@@ -383,11 +844,23 @@ public class EventoController {
             dto.setUbicacion(ubicacionDTO);
         }
         
+        // Convertir usuario productor
+        if (evento.getUsuario() != null) {
+            dto.setUsuarioId(evento.getUsuario().getId());
+            dto.setUsuarioNombre(evento.getUsuario().getNombre());
+            dto.setUsuarioEmail(evento.getUsuario().getEmail());
+            dto.setUsuarioRutProductor(evento.getUsuario().getRutProductor());
+        }
+        
         return dto;
     }
 
+    /**
+     * Convierte un EventoDTO a Evento
+     */
     private Evento convertToEntity(EventoDTO dto) {
         Evento evento = new Evento();
+        evento.setId(dto.getId());
         evento.setNombre(dto.getNombre());
         evento.setDescripcion(dto.getDescripcion());
         evento.setFecha(dto.getFecha());
@@ -395,33 +868,36 @@ public class EventoController {
         evento.setPrecioEntrada(dto.getPrecioEntrada());
         evento.setImagenUrl(dto.getImagenUrl());
         
-        if (dto.getProductorId() != null) {
-            var productor = productorRepository.findById(dto.getProductorId());
-            productor.ifPresent(evento::setProductor);
-        }
-        
-        if (dto.getUbicacionId() != null) {
-            var ubicacion = ubicacionRepository.findById(dto.getUbicacionId());
-            ubicacion.ifPresent(evento::setUbicacion);
+        // Asignar usuario si se especifica
+        if (dto.getUsuarioId() != null) {
+            Optional<Usuario> usuario = usuarioRepository.findById(dto.getUsuarioId());
+            usuario.ifPresent(evento::setUsuario);
         }
         
         return evento;
     }
 
-    private Evento convertToEntityWithoutProductor(EventoDTO dto) {
+    /**
+     * Convierte un EventoDTO a Evento sin asignar usuario
+     */
+    private Evento convertToEntityWithoutUsuario(EventoDTO dto) {
         Evento evento = new Evento();
+        evento.setId(dto.getId());
         evento.setNombre(dto.getNombre());
         evento.setDescripcion(dto.getDescripcion());
         evento.setFecha(dto.getFecha());
         evento.setCapacidadMaxima(dto.getCapacidadMaxima());
         evento.setPrecioEntrada(dto.getPrecioEntrada());
         evento.setImagenUrl(dto.getImagenUrl());
-        
         return evento;
     }
 
+    /**
+     * Convierte un UbicacionDTO a Ubicacion
+     */
     private Ubicacion convertUbicacionToEntity(UbicacionDTO dto) {
         Ubicacion ubicacion = new Ubicacion();
+        ubicacion.setId(dto.getId());
         ubicacion.setDireccion(dto.getDireccion());
         ubicacion.setComuna(dto.getComuna());
         ubicacion.setLatitud(dto.getLatitud());

@@ -56,15 +56,39 @@ public class ReservaServiceImpl implements ReservaService {
      */
     @Override
     public Reserva createReserva(Reserva reserva) throws IOException {
-        // Validar que la reserva tenga los datos requeridos
+        // Validar campos obligatorios no nulos
+        if (reserva == null) {
+            throw new IllegalArgumentException("La reserva no puede ser nula");
+        }
         if (reserva.getUsuario() == null) {
             throw new IllegalArgumentException("La reserva debe tener un usuario asociado");
         }
         if (reserva.getEvento() == null) {
             throw new IllegalArgumentException("La reserva debe tener un evento asociado");
         }
-        if (reserva.getCantidad() == null || reserva.getCantidad() <= 0) {
+        if (reserva.getCantidad() == null) {
+            throw new IllegalArgumentException("La cantidad no puede ser nula");
+        }
+        if (reserva.getCantidad() <= 0) {
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+        }
+        if (reserva.getCantidad() > 50) {
+            throw new IllegalArgumentException("La cantidad máxima permitida es 50 entradas por reserva");
+        }
+        
+        // Verificar que el usuario esté activo
+        if (reserva.getUsuario().getActivo() != 1) {
+            throw new IllegalArgumentException("El usuario no está activo");
+        }
+        
+        // Verificar que el evento esté activo
+        if (reserva.getEvento().getActivo() != 1) {
+            throw new IllegalArgumentException("El evento no está activo");
+        }
+        
+        // Verificar que el evento no haya pasado
+        if (reserva.getEvento().isEventoPasado()) {
+            throw new IllegalArgumentException("El evento ya ha pasado");
         }
         
         // Verificar que el evento esté disponible
@@ -73,8 +97,37 @@ public class ReservaServiceImpl implements ReservaService {
         }
         
         // Verificar cupos disponibles
-        if (reserva.getEvento().getCuposDisponibles() < reserva.getCantidad()) {
-            throw new IllegalArgumentException("No hay suficientes cupos disponibles para la cantidad solicitada");
+        int cuposDisponibles = reserva.getEvento().getCuposDisponibles();
+        if (cuposDisponibles < reserva.getCantidad()) {
+            throw new IllegalArgumentException("No hay suficientes cupos disponibles. Cupos disponibles: " + cuposDisponibles + ", Cantidad solicitada: " + reserva.getCantidad());
+        }
+        
+        // Verificar que el usuario no tenga ya una reserva activa para este evento
+        List<Reserva> reservasExistentes = getReservasByUsuarioId(reserva.getUsuario().getId());
+        boolean yaTieneReserva = reservasExistentes.stream()
+                .anyMatch(r -> r.getEvento().getId().equals(reserva.getEvento().getId()) && r.isActiva());
+        
+        if (yaTieneReserva) {
+            throw new IllegalArgumentException("El usuario ya tiene una reserva activa para este evento");
+        }
+        
+        // Verificar límite de 5 reservas ACTIVAS por usuario por evento (NO incluir canceladas)
+        long totalReservasActivasUsuarioEvento = reservasExistentes.stream()
+                .filter(r -> r.getEvento().getId().equals(reserva.getEvento().getId()) && r.isActiva())
+                .count();
+        
+        if (totalReservasActivasUsuarioEvento >= 5) {
+            throw new IllegalArgumentException("El usuario ya ha alcanzado el límite máximo de 5 reservas activas para este evento");
+        }
+        
+        // Establecer precio unitario si no se especifica
+        if (reserva.getPrecioUnitario() == null) {
+            reserva.setPrecioUnitario(reserva.getEvento().getPrecioEntrada());
+        }
+        
+        // Validar que el precio unitario no sea negativo
+        if (reserva.getPrecioUnitario() != null && reserva.getPrecioUnitario().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El precio unitario no puede ser negativo");
         }
         
         // El modelo Reserva maneja automáticamente:

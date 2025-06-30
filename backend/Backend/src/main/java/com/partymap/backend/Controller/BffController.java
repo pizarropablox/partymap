@@ -22,7 +22,6 @@ import com.partymap.backend.Service.BffService;
 
 
 @RestController
-@CrossOrigin
 @RequestMapping("/bff")
 public class BffController {
 

@@ -73,10 +73,11 @@ public class EventoDTO {
     private Long ubicacionId;
     
     /**
-     * ID del productor responsable del evento
+     * ID del usuario organizador del evento (productor o administrador)
+     * Los eventos se crean para que los clientes los puedan ver y reservar
      */
-    @NotNull(message = "El productor es obligatorio")
-    private Long productorId;
+    @NotNull(message = "El usuario organizador es obligatorio")
+    private Long usuarioId;
     
     // Getters manuales para asegurar compatibilidad
     public Long getId() { return id; }
@@ -87,7 +88,7 @@ public class EventoDTO {
     public BigDecimal getPrecioEntrada() { return precioEntrada; }
     public String getImagenUrl() { return imagenUrl; }
     public Long getUbicacionId() { return ubicacionId; }
-    public Long getProductorId() { return productorId; }
+    public Long getUsuarioId() { return usuarioId; }
     
     // Setters manuales para asegurar compatibilidad
     public void setId(Long id) { this.id = id; }
@@ -98,5 +99,5 @@ public class EventoDTO {
     public void setPrecioEntrada(BigDecimal precioEntrada) { this.precioEntrada = precioEntrada; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
     public void setUbicacionId(Long ubicacionId) { this.ubicacionId = ubicacionId; }
-    public void setProductorId(Long productorId) { this.productorId = productorId; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
 } 

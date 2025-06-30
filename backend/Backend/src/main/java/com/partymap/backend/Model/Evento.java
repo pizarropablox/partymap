@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -26,7 +27,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Entidad central que representa un evento en el sistema PartyMap.
- * Un evento es una actividad organizada por un productor en una ubicación específica.
+ * Un evento es una actividad organizada por un usuario productor en una ubicación específica.
  * Los eventos pueden recibir reservas de los clientes y tienen capacidad máxima opcional.
  */
 @Entity
@@ -41,7 +42,8 @@ public class Evento extends BaseEntity {
      * Identificador único del evento
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "evento_seq")
+    @SequenceGenerator(name = "evento_seq", sequenceName = "EVENTO_SEQ", allocationSize = 1)
     private Long id;
     
     /**
@@ -88,18 +90,18 @@ public class Evento extends BaseEntity {
     /**
      * Ubicación donde se realizará el evento
      */
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     @JoinColumn(name = "ubicacion_id", referencedColumnName = "id", nullable = false)
     @NotNull(message = "La ubicación es obligatoria")
     private Ubicacion ubicacion;
     
     /**
-     * Productor responsable de organizar el evento
+     * Usuario productor responsable de organizar el evento
      */
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "productor_id", referencedColumnName = "id", nullable = false)
-    @NotNull(message = "El productor es obligatorio")
-    private Productor productor;
+    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id", nullable = false)
+    @NotNull(message = "El usuario productor es obligatorio")
+    private Usuario usuario;
     
     /**
      * Lista de reservas realizadas para este evento
@@ -132,8 +134,8 @@ public class Evento extends BaseEntity {
     public Ubicacion getUbicacion() { return ubicacion; }
     public void setUbicacion(Ubicacion ubicacion) { this.ubicacion = ubicacion; }
     
-    public Productor getProductor() { return productor; }
-    public void setProductor(Productor productor) { this.productor = productor; }
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
     
     public List<Reserva> getReservas() { return reservas; }
     public void setReservas(List<Reserva> reservas) { this.reservas = reservas; }
@@ -199,11 +201,11 @@ public class Evento extends BaseEntity {
     }
     
     /**
-     * Verifica si el evento está próximo (en los próximos 7 días)
+     * Verifica si el evento es próximo (en las próximas 24 horas)
      */
     public boolean isEventoProximo() {
         LocalDateTime ahora = LocalDateTime.now();
-        LocalDateTime proximo = ahora.plusDays(7);
+        LocalDateTime proximo = ahora.plusHours(24);
         return fecha.isAfter(ahora) && fecha.isBefore(proximo);
     }
 } 

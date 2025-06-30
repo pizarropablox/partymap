@@ -44,6 +44,41 @@ public class UsuarioResponseDTO {
     private TipoUsuario tipoUsuario;
     
     /**
+     * ID único de Azure B2C (sub claim del JWT)
+     */
+    private String azureB2cId;
+    
+    /**
+     * Nombre del usuario desde Azure B2C (given_name)
+     */
+    private String nombreAzure;
+    
+    /**
+     * Apellido del usuario desde Azure B2C (family_name)
+     */
+    private String apellidoAzure;
+    
+    /**
+     * Rol desde Azure B2C (extension_Roles)
+     */
+    private String rolAzure;
+    
+    /**
+     * RUT del productor desde Azure B2C (extension_RUT) - solo para usuarios tipo PRODUCTOR
+     */
+    private String rutProductor;
+    
+    /**
+     * Indica si el usuario fue creado desde Azure B2C
+     */
+    private Boolean esUsuarioAzure;
+    
+    /**
+     * Fecha de la última conexión del usuario
+     */
+    private LocalDateTime fechaUltimaConexion;
+    
+    /**
      * Indica si el usuario está activo en el sistema
      */
     private Integer activo;
@@ -58,6 +93,13 @@ public class UsuarioResponseDTO {
     public String getNombre() { return nombre; }
     public String getEmail() { return email; }
     public TipoUsuario getTipoUsuario() { return tipoUsuario; }
+    public String getAzureB2cId() { return azureB2cId; }
+    public String getNombreAzure() { return nombreAzure; }
+    public String getApellidoAzure() { return apellidoAzure; }
+    public String getRolAzure() { return rolAzure; }
+    public String getRutProductor() { return rutProductor; }
+    public Boolean getEsUsuarioAzure() { return esUsuarioAzure; }
+    public LocalDateTime getFechaUltimaConexion() { return fechaUltimaConexion; }
     public Integer getActivo() { return activo; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     
@@ -66,6 +108,13 @@ public class UsuarioResponseDTO {
     public void setNombre(String nombre) { this.nombre = nombre; }
     public void setEmail(String email) { this.email = email; }
     public void setTipoUsuario(TipoUsuario tipoUsuario) { this.tipoUsuario = tipoUsuario; }
+    public void setAzureB2cId(String azureB2cId) { this.azureB2cId = azureB2cId; }
+    public void setNombreAzure(String nombreAzure) { this.nombreAzure = nombreAzure; }
+    public void setApellidoAzure(String apellidoAzure) { this.apellidoAzure = apellidoAzure; }
+    public void setRolAzure(String rolAzure) { this.rolAzure = rolAzure; }
+    public void setRutProductor(String rutProductor) { this.rutProductor = rutProductor; }
+    public void setEsUsuarioAzure(Boolean esUsuarioAzure) { this.esUsuarioAzure = esUsuarioAzure; }
+    public void setFechaUltimaConexion(LocalDateTime fechaUltimaConexion) { this.fechaUltimaConexion = fechaUltimaConexion; }
     public void setActivo(Integer activo) { this.activo = activo; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 } 

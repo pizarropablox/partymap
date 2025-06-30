@@ -29,6 +29,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByAzureB2cId(String azureB2cId);
 
     /**
+     * Busca un usuario productor por RUT
+     */
+    Optional<Usuario> findByRutProductor(String rutProductor);
+
+    /**
      * Verifica si existe un usuario con el email especificado
      */
     boolean existsByEmail(String email);
@@ -37,6 +42,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * Verifica si existe un usuario con el Azure B2C ID especificado
      */
     boolean existsByAzureB2cId(String azureB2cId);
+
+    /**
+     * Verifica si existe un usuario productor con el RUT especificado
+     */
+    boolean existsByRutProductor(String rutProductor);
 
     /**
      * Busca usuarios por tipo
@@ -54,6 +64,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findByTipoUsuarioAndActivoTrue(TipoUsuario tipoUsuario);
 
     /**
+     * Busca usuarios productores activos
+     */
+    @Query("SELECT u FROM Usuario u WHERE u.tipoUsuario = 'PRODUCTOR' AND u.activo = 1")
+    List<Usuario> findProductoresActivos();
+
+    /**
      * Busca usuarios por nombre (ignorando mayúsculas/minúsculas)
      */
     @Query("SELECT u FROM Usuario u WHERE LOWER(u.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))")
@@ -64,4 +80,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      */
     @Query("SELECT u FROM Usuario u WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%'))")
     List<Usuario> findByEmailContainingIgnoreCase(@Param("email") String email);
+
+    /**
+     * Busca usuarios productores por nombre (ignorando mayúsculas/minúsculas)
+     */
+    @Query("SELECT u FROM Usuario u WHERE u.tipoUsuario = 'PRODUCTOR' AND LOWER(u.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))")
+    List<Usuario> findProductoresByNombreContainingIgnoreCase(@Param("nombre") String nombre);
 } 

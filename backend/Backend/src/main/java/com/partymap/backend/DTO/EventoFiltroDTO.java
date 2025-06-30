@@ -51,9 +51,9 @@ public class EventoFiltroDTO {
     private BigDecimal precioMaximo;
     
     /**
-     * ID del productor
+     * ID del usuario productor
      */
-    private Long productorId;
+    private Long usuarioId;
     
     /**
      * Solo eventos disponibles (con cupos y no pasados)

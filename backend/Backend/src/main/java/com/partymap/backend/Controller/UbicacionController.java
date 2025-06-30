@@ -28,7 +28,6 @@ import com.partymap.backend.Service.UbicacionService;
  * Proporciona endpoints para operaciones CRUD de ubicaciones y funcionalidades adicionales.
  */
 @RestController
-@CrossOrigin
 @RequestMapping("/ubicacion")
 public class UbicacionController {
 
