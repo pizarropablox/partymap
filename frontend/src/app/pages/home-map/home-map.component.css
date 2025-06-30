@@ -1,0 +1,873 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ocupar toda la altura disponible */
+  width: 100%;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.map-wrapper {
+  flex: 1; /* Ocupar todo el espacio disponible */
+  width: 100%;
+  position: relative;
+}
+
+/* Indicador de carga */
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: #333;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+google-map {
+  display: block;
+  height: 100% !important;
+  width: 100% !important;
+  position: relative;
+}
+
+/* Estilos del panel de información */
+.evento-info {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  right: 20px;
+  background: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  max-width: 90%;
+  z-index: 1000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :host {
+    height: calc(100vh - 70px - 40px); /* Altura total menos navbar y footer */
+  }
+  
+  .evento-info {
+    bottom: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  :host {
+    height: calc(100vh - 60px - 35px); /* Altura total menos navbar y footer */
+  }
+  
+  .evento-info {
+    bottom: 65px;
+  }
+}
+
+/* Modal de información del evento */
+.evento-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+  backdrop-filter: blur(5px);
+}
+
+.evento-modal {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+  margin: 20px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header del modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.evento-title h2 {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.evento-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+  transform: scale(1.1);
+}
+
+/* Contenido del modal */
+.modal-content {
+  padding: 0 24px 24px 24px;
+}
+
+/* Sección de información del evento */
+.evento-info-section {
+  margin-bottom: 30px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-icon {
+  color: #667eea;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-content label {
+  display: block;
+  color: #666;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.info-content span {
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Información del usuario */
+.usuario-info {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.usuario-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.usuario-badge svg {
+  color: #ffd700;
+}
+
+/* Formulario de reserva */
+.reserva-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.reserva-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Formulario de reserva */
+.reserva-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #333;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.input-wrapper,
+.textarea-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper:focus-within,
+.textarea-wrapper:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.input-wrapper svg,
+.textarea-wrapper svg {
+  color: #667eea;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.form-input,
+.form-textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #333;
+  font-size: 0.95rem;
+  width: 100%;
+  font-family: inherit;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #999;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Botones de acción */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-reservar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-reservar:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-reservar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Botón para ver reservas */
+.btn-reservas {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.btn-reservas:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+  background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+}
+
+.btn-reservas svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.btn-reservas:hover svg {
+  transform: scale(1.1);
+}
+
+.loading-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Prompt de login */
+.login-prompt {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 20px;
+}
+
+.prompt-content {
+  text-align: center;
+  padding: 20px;
+}
+
+.prompt-content svg {
+  color: #667eea;
+  margin-bottom: 16px;
+}
+
+.prompt-content h3 {
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.prompt-content p {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+}
+
+.btn-login {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .evento-modal {
+    max-width: 95%;
+    width: 95%;
+    max-height: 80vh;
+    margin: 10px;
+  }
+  
+  .modal-header {
+    padding: 20px 20px 0 20px;
+  }
+  
+  .modal-content {
+    padding: 20px;
+  }
+  
+  .evento-title h2 {
+    font-size: 1.3rem;
+  }
+  
+  .info-item {
+    padding: 10px;
+  }
+  
+  .btn-reservar {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .btn-reservas {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .evento-modal {
+    max-width: 98%;
+    width: 98%;
+    max-height: 75vh;
+    margin: 5px;
+    border-radius: 15px;
+  }
+  
+  .modal-header {
+    padding: 15px 15px 0 15px;
+  }
+  
+  .modal-content {
+    padding: 15px;
+  }
+  
+  .evento-title h2 {
+    font-size: 1.2rem;
+  }
+  
+  .info-item {
+    padding: 8px;
+  }
+  
+  .form-input,
+  .form-textarea {
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+
+  .btn-reservar {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .btn-reservas {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Modal de confirmación de reserva duplicada */
+.confirmacion-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.confirmacion-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: confirmacionSlideIn 0.3s ease-out;
+  margin: 20px;
+}
+
+@keyframes confirmacionSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header del modal de confirmación */
+.confirmacion-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.confirmacion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.confirmacion-header h2 {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  flex-grow: 1;
+}
+
+/* Contenido del modal de confirmación */
+.confirmacion-content {
+  padding: 0 24px 24px 24px;
+}
+
+.confirmacion-message {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  text-align: center;
+  padding: 16px;
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #f59e0b;
+}
+
+/* Detalles de reservas */
+.reserva-existente-details,
+.nueva-reserva-details {
+  margin-bottom: 24px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.reserva-existente-details {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.nueva-reserva-details {
+  border-left: 4px solid #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.reserva-existente-details h3,
+.nueva-reserva-details h3 {
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reserva-existente-details h3::before {
+  content: "⚠️";
+  font-size: 1.2rem;
+}
+
+.nueva-reserva-details h3::before {
+  content: "✨";
+  font-size: 1.2rem;
+}
+
+.reserva-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.reserva-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.reserva-detail-item svg {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.reserva-detail-item span {
+  color: #333;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.reserva-detail-item strong {
+  color: #333;
+  font-weight: 600;
+}
+
+/* Acciones del modal de confirmación */
+.confirmacion-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 24px 24px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 0 20px 20px;
+}
+
+.btn-cancelar-operacion,
+.btn-confirmar-cancelacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-cancelar-operacion {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.btn-cancelar-operacion:hover {
+  background: rgba(107, 114, 128, 0.2);
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.btn-confirmar-cancelacion {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-confirmar-cancelacion:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-cancelar-operacion svg,
+.btn-confirmar-cancelacion svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.btn-cancelar-operacion:hover svg,
+.btn-confirmar-cancelacion:hover svg {
+  transform: scale(1.1);
+}
+
+/* Responsive design para el modal de confirmación */
+@media (max-width: 768px) {
+  .confirmacion-modal {
+    max-width: 95%;
+    width: 95%;
+    max-height: 80vh;
+    margin: 10px;
+  }
+
+  .confirmacion-header {
+    padding: 20px 20px 0 20px;
+  }
+
+  .confirmacion-content {
+    padding: 20px;
+  }
+
+  .confirmacion-actions {
+    padding: 0 20px 20px 20px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-cancelar-operacion,
+  .btn-confirmar-cancelacion {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reserva-existente-details,
+  .nueva-reserva-details {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirmacion-modal {
+    max-width: 98%;
+    width: 98%;
+    max-height: 75vh;
+    margin: 5px;
+    border-radius: 15px;
+  }
+
+  .confirmacion-header {
+    padding: 15px 15px 0 15px;
+  }
+
+  .confirmacion-content {
+    padding: 15px;
+  }
+
+  .confirmacion-actions {
+    padding: 0 15px 15px 15px;
+  }
+
+  .confirmacion-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .confirmacion-message {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .reserva-detail-item {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Estilos para el mensaje de permisos de usuario */
+.user-info-display {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.user-badge svg {
+  color: #007bff;
+}
