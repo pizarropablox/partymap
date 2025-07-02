@@ -1,0 +1,91 @@
+/* Ensure the app takes full height */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* App container to handle footer positioning */
+html-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Altura fija */
+  overflow-x: hidden; /* Solo prevenir scroll horizontal */
+}
+
+.main-content {
+  padding-top: 70px; /* Account for fixed navbar height */
+  position: relative;
+  z-index: 1; /* Ensure content is above footer */
+  flex: 1; /* Take available space */
+  min-height: calc(100vh - 70px - 40px); /* Account for navbar and footer (40px) */
+  display: flex; /* Usar flexbox */
+  flex-direction: column; /* Dirección vertical */
+  overflow: visible; /* Quitar scroll del contenedor principal */
+}
+
+/* Specific styling for map page */
+.main-content.map-page {
+  padding-top: 0; /* Remove padding for map */
+  flex: 1; /* Ocupar todo el espacio disponible */
+  display: flex; /* Usar flexbox */
+  flex-direction: column; /* Dirección vertical */
+  min-height: auto; /* Remove min-height for map page */
+  overflow: hidden; /* Prevent scroll solo en la página del mapa */
+  margin-bottom: 0; /* Eliminar margen inferior */
+}
+
+/* Specific styling for contact page */
+.main-content:not(.map-page) {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 70px - 40px);
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+/* Footer positioning */
+app-footer {
+  flex-shrink: 0; /* Prevent footer from shrinking */
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  height: 40px; /* Altura fija del footer */
+  margin-top: auto; /* Empujar el footer al final */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 70px;
+    min-height: calc(100vh - 70px - 40px); /* Footer de 40px en móviles */
+  }
+  
+  .main-content.map-page {
+    padding-top: 0;
+    flex: 1; /* Ocupar todo el espacio disponible */
+    display: flex; /* Usar flexbox */
+    flex-direction: column; /* Dirección vertical */
+    min-height: auto; /* Remove min-height for map page */
+    overflow: hidden; /* Prevent scroll */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding-top: 60px; /* Smaller navbar on mobile */
+    min-height: calc(100vh - 60px - 35px); /* Footer de 35px en móviles pequeños */
+  }
+  
+  .main-content.map-page {
+    padding-top: 0;
+    flex: 1; /* Ocupar todo el espacio disponible */
+    display: flex; /* Usar flexbox */
+    flex-direction: column; /* Dirección vertical */
+    min-height: auto; /* Remove min-height for map page */
+    overflow: hidden; /* Prevent scroll */
+  }
+}

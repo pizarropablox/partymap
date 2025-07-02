@@ -1,0 +1,110 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <!-- Logo/Icon on the left -->
+    <div class="navbar-brand">
+      <div class="logo-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Navigation links -->
+    <div class="navbar-nav">
+      <a routerLink="/" class="nav-link">Home</a>
+      <a routerLink="/about" class="nav-link">About</a>
+      <a routerLink="/contact" class="nav-link">Contact</a>
+      <a *ngIf="canAccessEvents" routerLink="/events" class="nav-link">Eventos</a>
+      <a *ngIf="canAccessReservas" routerLink="/reservas" class="nav-link">Reservas</a>
+      <a *ngIf="canAccessReportes" routerLink="/reportes" class="nav-link">Reportes</a>
+      <a *ngIf="canAccessUsuario" routerLink="/usuario" class="nav-link">Usuarios</a>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="onSearchInput($event)"
+          (focus)="onSearchFocus()"
+          placeholder="Buscar ubicaciones..."
+          class="search-input"
+        >
+      </div>
+      
+      <!-- Search results dropdown -->
+      <div class="search-results" *ngIf="showResults && searchResults.length > 0">
+        <div 
+          *ngFor="let result of searchResults" 
+          class="search-result-item"
+          (click)="selectResult(result)"
+        >
+          <div class="result-name">{{ result.nombre }}</div>
+          <div class="result-address">{{ result.direccion }}, {{ result.comuna }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User section -->
+    <div class="user-section">
+      <!-- User info when authenticated -->
+      <div *ngIf="loginDisplay" class="user-info">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-role">{{ userRole }}</div>
+      </div>
+      
+      <!-- Auth buttons -->
+      <button *ngIf="!loginDisplay" (click)="login()" class="auth-btn login-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="10,17 15,12 10,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="15" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Iniciar Sesión
+      </button>
+      
+      <button *ngIf="loginDisplay" (click)="logout()" class="auth-btn logout-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Cerrar Sesión
+      </button>
+    </div>
+
+    <!-- Mobile menu button -->
+    <div class="mobile-menu-btn" (click)="toggleMobileMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" [class.active]="isMobileMenuOpen">
+    <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">Home</a>
+    <a routerLink="/about" class="mobile-nav-link" (click)="closeMobileMenu()">About</a>
+    <a routerLink="/contact" class="mobile-nav-link" (click)="closeMobileMenu()">Contact</a>
+    <a *ngIf="canAccessEvents" routerLink="/events" class="mobile-nav-link" (click)="closeMobileMenu()">Eventos</a>
+    <a *ngIf="canAccessReservas" routerLink="/reservas" class="mobile-nav-link" (click)="closeMobileMenu()">Reservas</a>
+    <a *ngIf="canAccessReportes" routerLink="/reportes" class="mobile-nav-link" (click)="closeMobileMenu()">Reportes</a>
+    <a *ngIf="canAccessUsuario" routerLink="/usuario" class="mobile-nav-link" (click)="closeMobileMenu()">Usuarios</a>
+    
+    <!-- User info in mobile menu when authenticated -->
+    <div *ngIf="loginDisplay" class="mobile-user-info">
+      <div class="mobile-user-name">{{ userName }}</div>
+      <div class="mobile-user-role">{{ userRole }}</div>
+    </div>
+    
+    <button *ngIf="!loginDisplay" (click)="login()" class="mobile-nav-link auth-mobile-btn">Iniciar Sesión</button>
+    <button *ngIf="loginDisplay" (click)="logout()" class="mobile-nav-link auth-mobile-btn">Cerrar Sesión</button>
+  </div>
+</nav>

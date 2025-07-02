@@ -1,0 +1,72 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Estilos globales para que el mapa se visualice correctamente */
+html, body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Solo prevenir scroll horizontal */
+}
+
+/* Prevent scrollbars on map page */
+body.map-page {
+  overflow: hidden !important;
+}
+
+/* Allow scroll on contact page */
+body.contact-page {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for non-map pages */
+.main-content:not(.map-page)::-webkit-scrollbar {
+  width: 12px;
+}
+
+.main-content:not(.map-page)::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.main-content:not(.map-page)::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.main-content:not(.map-page)::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: scale(1.05);
+}
+
+.main-content:not(.map-page)::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox Scrollbar for non-map pages */
+.main-content:not(.map-page) {
+  scrollbar-width: thin;
+  scrollbar-color: #667eea rgba(255, 255, 255, 0.1);
+}
+
+html-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Solo prevenir scroll horizontal */
+}
+
+/* Asegurar que el router-outlet ocupe todo el espacio */
+router-outlet + * {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Solo prevenir scroll horizontal */
+}
