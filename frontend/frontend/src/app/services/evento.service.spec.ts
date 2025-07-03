@@ -1,17 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { GoogleMapsLoaderService } from '../services/google-maps-loader.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { EventoService } from './evento.service';
 
-describe('GoogleMapsLoaderService', () => {
-  let service: GoogleMapsLoaderService;
+describe('EventoService', () => {
+  let service: EventoService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [GoogleMapsLoaderService]
+      providers: [EventoService]
     });
-
-    service = TestBed.inject(GoogleMapsLoaderService);
+    service = TestBed.inject(EventoService);
   });
 
   it('debería crearse correctamente', () => {

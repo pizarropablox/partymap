@@ -1,23 +1,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HomeMapComponent } from './home-map.component';
+import { CommonModule } from '@angular/common';
 
-import { HomeMap } from './home-map';
-
-describe('HomeMap', () => {
-  let component: HomeMap;
-  let fixture: ComponentFixture<HomeMap>;
+describe('HomeMapComponent', () => {
+  let component: HomeMapComponent;
+  let fixture: ComponentFixture<HomeMapComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HomeMap]
-    })
-    .compileComponents();
+      imports: [CommonModule, HomeMapComponent]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(HomeMap);
+    fixture = TestBed.createComponent(HomeMapComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('debería crearse correctamente', () => {
     expect(component).toBeTruthy();
   });
 });

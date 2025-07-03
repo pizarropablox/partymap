@@ -1,17 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { GoogleMapsLoaderService } from '../services/google-maps-loader.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { FileStorageService } from './file-storage.service';
 
-describe('GoogleMapsLoaderService', () => {
-  let service: GoogleMapsLoaderService;
+describe('FileStorageService', () => {
+  let service: FileStorageService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [GoogleMapsLoaderService]
+      providers: [FileStorageService]
     });
-
-    service = TestBed.inject(GoogleMapsLoaderService);
+    service = TestBed.inject(FileStorageService);
   });
 
   it('debería crearse correctamente', () => {
