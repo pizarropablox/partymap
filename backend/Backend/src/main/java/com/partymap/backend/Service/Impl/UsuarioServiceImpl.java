@@ -29,6 +29,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    // 🔧 Constructor público agregado para testing (sin romper @Autowired)
+    public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
+    }
+
     /**
      * Obtiene todos los usuarios activos del sistema
      */
