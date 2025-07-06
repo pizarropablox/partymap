@@ -1,4 +1,4 @@
-package com.partymap.backend;
+package com.partymap.backend.Service;
 
 import com.partymap.backend.Model.Evento;
 import com.partymap.backend.Repository.EventoRepository;

@@ -1,4 +1,4 @@
-package com.partymap.backend;
+package com.partymap.backend.Service;
 
 import com.partymap.backend.RestClients.ClienteRest;
 import com.partymap.backend.Service.Impl.BffServiceImpl;
