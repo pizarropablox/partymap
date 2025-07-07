@@ -5,6 +5,9 @@ import com.partymap.backend.model.Usuario;
 import com.partymap.backend.repository.UsuarioRepository;
 import com.partymap.backend.service.Impl.UsuarioServiceImpl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -506,6 +509,289 @@ public class UsuarioServiceImplTest {
         String saludo = usuarioService.saludoTest();
         assertEquals("Hola SonarQube", saludo);
     }
+    
+    @Test
+    void deberiaCrearUsuarioProductorConRut() {
+        when(usuarioRepository.findByEmail("nuevo@productor.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Usuario nuevo = usuarioService.findOrCreateUsuarioByEmail(
+            "nuevo@productor.com", "Nombre", "Apellido", "az-productor", "PRODUCTOR", "22.222.222-2"
+        );
+
+        assertEquals("nuevo@productor.com", nuevo.getEmail());
+        assertEquals("NombreApellido", nuevo.getNombre());
+        assertEquals("PRODUCTOR", nuevo.getRolAzure());
+        assertEquals("22.222.222-2", nuevo.getRutProductor());
+        assertEquals(TipoUsuario.PRODUCTOR, nuevo.getTipoUsuario());
+
+        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+    }
+    @Test
+    void deberiaRetornarVacioSiUsuarioPorIdNoExiste() {
+        when(usuarioRepository.findById(999L)).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioById(999L);
+
+        assertFalse(resultado.isPresent());
+        verify(usuarioRepository).findById(999L);
+    }
+
+
+    @Test
+    void deberiaRetornarUsuariosActivos() {
+        Usuario usuarioActivo = new Usuario();
+        usuarioActivo.setActivo(1);
+
+        Usuario usuarioInactivo = new Usuario();
+        usuarioInactivo.setActivo(0);
+
+        when(usuarioRepository.findAll()).thenReturn(List.of(usuarioActivo, usuarioInactivo));
+
+        List<Usuario> usuarios = usuarioService.getAllUsuarios();
+
+        assertEquals(1, usuarios.size());
+        assertEquals(1, usuarios.get(0).getActivo());
+    }
+
+    @Test
+    void deberiaActualizarUsuarioExistentePorId() {
+        Usuario usuarioActualizado = new Usuario();
+        usuarioActualizado.setNombre("Nuevo Nombre");
+
+        when(usuarioRepository.existsById(1L)).thenReturn(true);
+        when(usuarioRepository.save(usuarioActualizado)).thenReturn(usuarioActualizado);
+
+        Usuario resultado = usuarioService.updateUsuario(1L, usuarioActualizado);
+
+        assertNotNull(resultado);
+        assertEquals("Nuevo Nombre", resultado.getNombre());
+        verify(usuarioRepository, times(1)).existsById(1L);
+        verify(usuarioRepository, times(1)).save(usuarioActualizado);
+    }
+
+    @Test
+    void deberiaRetornarTrueSiExisteProductorPorRut() {
+        when(usuarioRepository.existsByRutProductor("77.777.777-7")).thenReturn(true);
+
+        boolean existe = usuarioService.existsProductorByRut("77.777.777-7");
+
+        assertTrue(existe);
+        verify(usuarioRepository).existsByRutProductor("77.777.777-7");
+    }
+
+    @Test
+    void deberiaRetornarSoloUsuariosActivos() {
+        Usuario usuarioActivo = new Usuario();
+        usuarioActivo.setNombre("Activo");
+        usuarioActivo.setActivo(1);
+
+        Usuario usuarioInactivo = new Usuario();
+        usuarioInactivo.setNombre("Inactivo");
+        usuarioInactivo.setActivo(0);
+
+        List<Usuario> usuariosMock = Arrays.asList(usuarioActivo, usuarioInactivo);
+        when(usuarioRepository.findAll()).thenReturn(usuariosMock);
+
+        List<Usuario> resultado = usuarioService.getAllUsuarios();
+
+        assertEquals(1, resultado.size());
+        assertEquals("Activo", resultado.get(0).getNombre());
+        verify(usuarioRepository).findAll();
+    }
+
+    @Test
+    void deberiaRetornarUsuarioSiExistePorId() {
+        Usuario usuarioMock = new Usuario();
+        usuarioMock.setId(1L);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioMock));
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioById(1L);
+
+        assertTrue(resultado.isPresent());
+        assertEquals(1L, resultado.get().getId());
+    }
+
+    @Test
+    void deberiaRetornarVacioSiNoExisteUsuarioPorId() {
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioById(2L);
+
+        assertFalse(resultado.isPresent());
+    }
+
+    @Test
+    void deberiaRetornarUsuarioSiExistePorEmail() {
+        Usuario usuarioMock = new Usuario();
+        usuarioMock.setEmail("test@email.com");
+
+        when(usuarioRepository.findByEmail("test@email.com")).thenReturn(Optional.of(usuarioMock));
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioByEmail("test@email.com");
+
+        assertTrue(resultado.isPresent());
+        assertEquals("test@email.com", resultado.get().getEmail());
+    }
+
+    @Test
+    void deberiaRetornarVacioSiNoExisteUsuarioPorEmail() {
+        when(usuarioRepository.findByEmail("falso@email.com")).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioByEmail("falso@email.com");
+
+        assertFalse(resultado.isPresent());
+    }
+
+    @Test
+    void deberiaRetornarUsuariosProductoresActivos() {
+        List<Usuario> productoresMock = new ArrayList<>();
+        productoresMock.add(new Usuario());
+
+        when(usuarioRepository.findProductoresActivos()).thenReturn(productoresMock);
+
+        List<Usuario> resultado = usuarioService.getAllProductores();
+
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void deberiaBuscarProductoresPorNombre() {
+        List<Usuario> mockUsuarios = new ArrayList<>();
+        mockUsuarios.add(new Usuario());
+
+        when(usuarioRepository.findProductoresByNombreContainingIgnoreCase("Juan")).thenReturn(mockUsuarios);
+
+        List<Usuario> resultado = usuarioService.getProductoresByNombre("Juan");
+
+        assertFalse(resultado.isEmpty());
+    }
+
+    @Test
+    void deberiaEliminarUsuario() {
+        doNothing().when(usuarioRepository).deleteById(1L);
+
+        usuarioService.deleteUsuario(1L);
+
+        verify(usuarioRepository, times(1)).deleteById(1L);
+    }
+
+
+    @Test
+    void deberiaRetornarUsuarioPorIdInexistente() {
+        when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioById(77L);
+
+        assertFalse(resultado.isPresent());
+        verify(usuarioRepository, times(1)).findById(77L);
+    }
+
+    @Test
+    void deberiaRetornarUsuarioPorEmailInexistente() {
+        when(usuarioRepository.findByEmail("inexistente@email.com")).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioByEmail("inexistente@email.com");
+
+        assertFalse(resultado.isPresent());
+        verify(usuarioRepository, times(1)).findByEmail("inexistente@email.com");
+    }
+
+    @Test
+    void deberiaRetornarUsuarioPorRutInexistente() {
+        when(usuarioRepository.findByRutProductor("00.000.000-0")).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getProductorByRut("00.000.000-0");
+
+        assertFalse(resultado.isPresent());
+        verify(usuarioRepository, times(1)).findByRutProductor("00.000.000-0");
+    }
+
+    @Test
+    void deberiaRetornarUsuarioPorAzureB2cIdInexistente() {
+        when(usuarioRepository.findByAzureB2cId("az-no")).thenReturn(Optional.empty());
+
+        Optional<Usuario> resultado = usuarioService.getUsuarioByAzureB2cId("az-no");
+
+        assertFalse(resultado.isPresent());
+        verify(usuarioRepository, times(1)).findByAzureB2cId("az-no");
+    }
+
+
+
+    @Test
+    void deberiaCrearUsuarioConRolDesconocidoYAsumirCliente() {
+        Jwt jwt = mock(Jwt.class);
+
+        when(jwt.getClaim("emails")).thenReturn(List.of("cliente@correo.com"));
+        when(jwt.getClaimAsString("given_name")).thenReturn("Nombre");
+        when(jwt.getClaimAsString("family_name")).thenReturn("Apellido");
+        when(jwt.getClaimAsString("extension_Roles")).thenReturn("SUPERHEROE"); // rol inválido
+        when(jwt.getClaim("extension_RUT")).thenReturn("11.111.111-1");
+        when(jwt.getSubject()).thenReturn("b2c-987");
+
+        when(usuarioRepository.findByAzureB2cId("b2c-987")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmail("cliente@correo.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Usuario resultado = usuarioService.sincronizarUsuarioDesdeJWT(jwt);
+
+        assertEquals("CLIENTE", resultado.getRolAzure());
+        assertEquals("cliente@correo.com", resultado.getEmail());
+    }
+
+    @Test
+    void deberiaActualizarUsuarioConAzureIdNulo() {
+        Usuario usuario = new Usuario();
+        usuario.setAzureB2cId(null);
+        usuario.setEmail("sinid@azure.com");
+
+        when(usuarioRepository.findByEmail("sinid@azure.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Usuario actualizado = usuarioService.findOrCreateUsuarioByEmail(
+            "sinid@azure.com", "Nuevo", "Nombre", "nuevo-id", "PRODUCTOR", "33.333.333-3"
+        );
+
+        assertEquals("nuevo-id", actualizado.getAzureB2cId());
+        assertEquals("NuevoNombre", actualizado.getNombre());
+    }
+
+    @Test
+    void deberiaActualizarUsuarioConAzureIdVacio() {
+        Usuario usuario = new Usuario();
+        usuario.setAzureB2cId("");
+        usuario.setEmail("vacio@azure.com");
+
+        when(usuarioRepository.findByEmail("vacio@azure.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Usuario actualizado = usuarioService.findOrCreateUsuarioByEmail(
+            "vacio@azure.com", "Vac", "Io", "az-id", "CLIENTE", null
+        );
+
+        assertEquals("az-id", actualizado.getAzureB2cId());
+        assertEquals("VacIo", actualizado.getNombre());
+    }
+
+    @Test
+    void deberiaRetornarProductoresActivos() {
+        Usuario prod = new Usuario();
+        prod.setNombre("Activo");
+
+        when(usuarioRepository.findProductoresActivos()).thenReturn(List.of(prod));
+
+        List<Usuario> resultado = usuarioService.getAllProductores();
+
+        assertFalse(resultado.isEmpty());
+        assertEquals("Activo", resultado.get(0).getNombre());
+        verify(usuarioRepository).findProductoresActivos();
+    }
+
+
+
+    
 
 
 }
