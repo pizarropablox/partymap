@@ -1,4 +1,4 @@
-package com.partymap.backend.Controller;
+package com.partymap.backend.controller;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.partymap.backend.DTO.UbicacionDTO;
-import com.partymap.backend.DTO.UbicacionResponseDTO;
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.Ubicacion;
-import com.partymap.backend.Service.UbicacionService;
+import com.partymap.backend.dto.UbicacionDTO;
+import com.partymap.backend.dto.UbicacionResponseDTO;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.Ubicacion;
+import com.partymap.backend.service.UbicacionService;
 
 /**
  * Controlador REST para la gestión de ubicaciones.

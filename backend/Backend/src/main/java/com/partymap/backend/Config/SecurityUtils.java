@@ -1,4 +1,4 @@
-package com.partymap.backend.Config;
+package com.partymap.backend.config;
 
 import java.util.Optional;
 
@@ -7,8 +7,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Service.UsuarioService;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.service.UsuarioService;
 
 /**
  * Clase utilitaria para manejar la autenticación y autorización.

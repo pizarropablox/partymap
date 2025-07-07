@@ -1,9 +1,9 @@
-package com.partymap.backend.Repository;
+package com.partymap.backend.repository;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.partymap.backend.Model.Evento;
+import com.partymap.backend.model.Evento;
 
 /**
  * Repositorio para la entidad Evento.

@@ -1,4 +1,4 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.partymap.backend.Model.Reserva;
+import com.partymap.backend.model.Reserva;
 
 /**
  * Interfaz de servicio para la gestión de reservas.

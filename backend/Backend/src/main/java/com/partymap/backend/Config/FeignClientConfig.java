@@ -1,4 +1,4 @@
-package com.partymap.backend.Config;
+package com.partymap.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

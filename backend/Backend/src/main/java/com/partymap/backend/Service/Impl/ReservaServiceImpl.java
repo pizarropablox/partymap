@@ -1,4 +1,4 @@
-package com.partymap.backend.Service.Impl;
+package com.partymap.backend.service.Impl;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.EstadoReserva;
-import com.partymap.backend.Model.Reserva;
-import com.partymap.backend.Repository.ReservaRepository;
-import com.partymap.backend.Service.ReservaService;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.EstadoReserva;
+import com.partymap.backend.model.Reserva;
+import com.partymap.backend.repository.ReservaRepository;
+import com.partymap.backend.service.ReservaService;
 
 /**
  * Implementación del servicio de reservas.

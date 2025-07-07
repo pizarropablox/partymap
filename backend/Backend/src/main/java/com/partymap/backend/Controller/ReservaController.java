@@ -1,4 +1,4 @@
-package com.partymap.backend.Controller;
+package com.partymap.backend.controller;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -22,17 +22,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.partymap.backend.Config.SecurityUtils;
-import com.partymap.backend.DTO.ReservaDTO;
-import com.partymap.backend.DTO.ReservaResponseDTO;
-import com.partymap.backend.DTO.ErrorResponseDTO;
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.Evento;
-import com.partymap.backend.Model.Reserva;
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Repository.EventoRepository;
-import com.partymap.backend.Repository.UsuarioRepository;
-import com.partymap.backend.Service.ReservaService;
+import com.partymap.backend.config.SecurityUtils;
+import com.partymap.backend.dto.ErrorResponseDTO;
+import com.partymap.backend.dto.ReservaDTO;
+import com.partymap.backend.dto.ReservaResponseDTO;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.Evento;
+import com.partymap.backend.model.Reserva;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.repository.EventoRepository;
+import com.partymap.backend.repository.UsuarioRepository;
+import com.partymap.backend.service.ReservaService;
 
 /**
  * Controlador REST para la gestión de reservas.
@@ -1148,7 +1148,7 @@ public class ReservaController {
         
         // Incluir información del usuario
         if (reserva.getUsuario() != null) {
-            com.partymap.backend.DTO.UsuarioResponseDTO usuarioDTO = new com.partymap.backend.DTO.UsuarioResponseDTO();
+            com.partymap.backend.dto.UsuarioResponseDTO usuarioDTO = new com.partymap.backend.dto.UsuarioResponseDTO();
             usuarioDTO.setId(reserva.getUsuario().getId());
             usuarioDTO.setNombre(reserva.getUsuario().getNombre());
             usuarioDTO.setEmail(reserva.getUsuario().getEmail());
@@ -1160,7 +1160,7 @@ public class ReservaController {
         
         // Incluir información del evento
         if (reserva.getEvento() != null) {
-            com.partymap.backend.DTO.EventoResponseDTO eventoDTO = new com.partymap.backend.DTO.EventoResponseDTO();
+            com.partymap.backend.dto.EventoResponseDTO eventoDTO = new com.partymap.backend.dto.EventoResponseDTO();
             eventoDTO.setId(reserva.getEvento().getId());
             eventoDTO.setNombre(reserva.getEvento().getNombre());
             eventoDTO.setDescripcion(reserva.getEvento().getDescripcion());

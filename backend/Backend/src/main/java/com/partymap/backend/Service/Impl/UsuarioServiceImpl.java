@@ -1,4 +1,4 @@
-package com.partymap.backend.Service.Impl;
+package com.partymap.backend.service.Impl;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +11,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Repository.UsuarioRepository;
-import com.partymap.backend.Service.UsuarioService;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.repository.UsuarioRepository;
+import com.partymap.backend.service.UsuarioService;
 
 /**
  * Implementación del servicio de usuarios.
@@ -32,6 +32,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     // 🔧 Constructor público agregado para testing (sin romper @Autowired)
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
+    }
+
+        @Override
+    public String saludoTest() {
+        return "Hola SonarQube";
     }
 
     /**

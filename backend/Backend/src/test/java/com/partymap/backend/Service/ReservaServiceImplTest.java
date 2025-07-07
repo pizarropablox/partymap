@@ -1,8 +1,9 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
-import com.partymap.backend.Model.Reserva;
-import com.partymap.backend.Repository.ReservaRepository;
-import com.partymap.backend.Service.Impl.ReservaServiceImpl;
+import com.partymap.backend.model.Reserva;
+import com.partymap.backend.repository.ReservaRepository;
+import com.partymap.backend.service.Impl.ReservaServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

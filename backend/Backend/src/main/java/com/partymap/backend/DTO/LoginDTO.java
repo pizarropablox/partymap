@@ -1,4 +1,4 @@
-package com.partymap.backend.DTO;
+package com.partymap.backend.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

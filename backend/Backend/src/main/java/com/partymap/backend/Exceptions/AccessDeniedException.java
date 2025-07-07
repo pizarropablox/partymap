@@ -1,4 +1,4 @@
-package com.partymap.backend.Exceptions;
+package com.partymap.backend.exceptions;
 
 /**
  * Excepción personalizada para manejar errores de acceso denegado.

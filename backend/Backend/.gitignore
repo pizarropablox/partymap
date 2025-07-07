@@ -1,33 +1,60 @@
+# --- Archivos comunes innecesarios ---
 HELP.md
+*.log
+
+# --- Java / Maven ---
 target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# --- Maven Wrapper ---
+.mvn/
+!/.mvn/wrapper/maven-wrapper.properties
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+mvnw
+mvnw.cmd
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# --- Node.js ---
+node_modules/
+dist/
+package-lock.json
 
-### IntelliJ IDEA ###
-.idea
-*.iws
+# --- Entornos de desarrollo ---
+.vscode/
+.idea/
 *.iml
 *.ipr
+*.iws
+.project
+.classpath
+.factorypath
+.settings/
+.sts4-cache
+.apt_generated
 
-### NetBeans ###
+# --- NetBeans ---
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# --- SonarQube ---
+.sonar/
+.sonarcloud.properties
+
+# --- Cobertura de tests ---
+jacoco.exec
+coverage/
+
+# --- Otros archivos temporales ---
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# --- Git ---
+*.orig

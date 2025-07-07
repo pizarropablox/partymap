@@ -1,4 +1,4 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
 import java.util.Map;
 

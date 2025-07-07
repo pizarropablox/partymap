@@ -1,4 +1,4 @@
-package com.partymap.backend.Controller;
+package com.partymap.backend.controller;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -11,21 +11,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.partymap.backend.DTO.EventoConUbicacionDTO;
-import com.partymap.backend.DTO.EventoConUbicacionUpdateDTO;
-import com.partymap.backend.DTO.EventoDTO;
-import com.partymap.backend.DTO.EventoResponseDTO;
-import com.partymap.backend.DTO.UbicacionDTO;
-import com.partymap.backend.DTO.UbicacionResponseDTO;
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.Evento;
-import com.partymap.backend.Model.Ubicacion;
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Repository.EventoRepository;
-import com.partymap.backend.Repository.UbicacionRepository;
-import com.partymap.backend.Repository.UsuarioRepository;
-import com.partymap.backend.Service.EventoService;
-import com.partymap.backend.Config.SecurityUtils;
+import com.partymap.backend.config.SecurityUtils;
+import com.partymap.backend.dto.EventoConUbicacionDTO;
+import com.partymap.backend.dto.EventoConUbicacionUpdateDTO;
+import com.partymap.backend.dto.EventoDTO;
+import com.partymap.backend.dto.EventoResponseDTO;
+import com.partymap.backend.dto.UbicacionDTO;
+import com.partymap.backend.dto.UbicacionResponseDTO;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.Evento;
+import com.partymap.backend.model.Ubicacion;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.repository.EventoRepository;
+import com.partymap.backend.repository.UbicacionRepository;
+import com.partymap.backend.repository.UsuarioRepository;
+import com.partymap.backend.service.EventoService;
 
 /**
  * Controlador REST para la gestión de eventos.

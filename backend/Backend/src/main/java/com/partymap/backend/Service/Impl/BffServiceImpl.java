@@ -1,12 +1,12 @@
-package com.partymap.backend.Service.Impl;
+package com.partymap.backend.service.Impl;
 
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.partymap.backend.RestClients.ClienteRest;
-import com.partymap.backend.Service.BffService;
+import com.partymap.backend.restclients.ClienteRest;
+import com.partymap.backend.service.BffService;
 
 @Service
 public class BffServiceImpl implements BffService {

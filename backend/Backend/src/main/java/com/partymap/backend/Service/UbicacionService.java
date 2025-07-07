@@ -1,10 +1,10 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import com.partymap.backend.Model.Ubicacion;
+import com.partymap.backend.model.Ubicacion;
 
 /**
  * Interfaz de servicio para la gestión de ubicaciones.

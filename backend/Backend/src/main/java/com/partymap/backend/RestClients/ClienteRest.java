@@ -1,4 +1,4 @@
-package com.partymap.backend.RestClients;
+package com.partymap.backend.restclients;
 
 import java.util.Map;
 

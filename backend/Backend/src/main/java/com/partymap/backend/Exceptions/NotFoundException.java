@@ -1,4 +1,4 @@
-package com.partymap.backend.Exceptions;
+package com.partymap.backend.exceptions;
 
 
 public class NotFoundException extends RuntimeException {

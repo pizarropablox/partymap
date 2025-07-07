@@ -1,4 +1,4 @@
-package com.partymap.backend.Model;
+package com.partymap.backend.model;
 
 /**
  * Enumeración que define los tipos de usuarios en el sistema PartyMap.

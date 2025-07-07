@@ -1,8 +1,8 @@
-package com.partymap.backend.DTO;
+package com.partymap.backend.dto;
 
 import java.time.LocalDateTime;
 
-import com.partymap.backend.Model.TipoUsuario;
+import com.partymap.backend.model.TipoUsuario;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

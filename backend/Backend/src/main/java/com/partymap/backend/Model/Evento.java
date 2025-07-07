@@ -1,4 +1,4 @@
-package com.partymap.backend.Model;
+package com.partymap.backend.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -1,8 +1,9 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
-import com.partymap.backend.Model.Ubicacion;
-import com.partymap.backend.Repository.UbicacionRepository;
-import com.partymap.backend.Service.Impl.UbicacionServiceImpl;
+import com.partymap.backend.model.Ubicacion;
+import com.partymap.backend.repository.UbicacionRepository;
+import com.partymap.backend.service.Impl.UbicacionServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

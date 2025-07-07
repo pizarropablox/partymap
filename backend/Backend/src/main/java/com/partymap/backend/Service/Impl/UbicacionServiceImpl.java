@@ -1,4 +1,4 @@
-package com.partymap.backend.Service.Impl;
+package com.partymap.backend.service.Impl;
 
 import java.io.IOException;
 import java.util.List;
@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.Ubicacion;
-import com.partymap.backend.Repository.UbicacionRepository;
-import com.partymap.backend.Service.UbicacionService;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.Ubicacion;
+import com.partymap.backend.repository.UbicacionRepository;
+import com.partymap.backend.service.UbicacionService;
 
 /**
  * Implementación del servicio de ubicaciones.

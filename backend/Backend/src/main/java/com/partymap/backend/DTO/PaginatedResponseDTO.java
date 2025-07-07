@@ -1,4 +1,4 @@
-package com.partymap.backend.DTO;
+package com.partymap.backend.dto;
 
 import java.util.List;
 

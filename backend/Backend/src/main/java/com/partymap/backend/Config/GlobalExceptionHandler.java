@@ -1,4 +1,4 @@
-package com.partymap.backend.Config;
+package com.partymap.backend.config;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import com.partymap.backend.Exceptions.NotFoundException;
+import com.partymap.backend.exceptions.NotFoundException;
 
 /**
  * Controlador global de excepciones para manejar errores de manera consistente.

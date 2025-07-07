@@ -1,9 +1,10 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
-import com.partymap.backend.Model.Evento;
-import com.partymap.backend.Repository.EventoRepository;
-import com.partymap.backend.Repository.UbicacionRepository;
-import com.partymap.backend.Service.Impl.EventoServiceImpl;
+import com.partymap.backend.model.Evento;
+import com.partymap.backend.repository.EventoRepository;
+import com.partymap.backend.repository.UbicacionRepository;
+import com.partymap.backend.service.Impl.EventoServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

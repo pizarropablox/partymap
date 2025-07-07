@@ -1,9 +1,9 @@
-package com.partymap.backend.DTO;
+package com.partymap.backend.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.partymap.backend.Model.EstadoReserva;
+import com.partymap.backend.model.EstadoReserva;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

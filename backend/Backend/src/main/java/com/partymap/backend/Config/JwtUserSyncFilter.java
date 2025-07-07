@@ -1,4 +1,4 @@
-package com.partymap.backend.Config;
+package com.partymap.backend.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +8,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Service.UsuarioService;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.service.UsuarioService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

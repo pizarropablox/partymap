@@ -1,4 +1,4 @@
-package com.partymap.backend.Repository;
+package com.partymap.backend.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.partymap.backend.Model.TipoUsuario;
-import com.partymap.backend.Model.Usuario;
+import com.partymap.backend.model.TipoUsuario;
+import com.partymap.backend.model.Usuario;
 
 /**
  * Repositorio para la entidad Usuario.

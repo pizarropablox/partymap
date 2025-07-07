@@ -1,4 +1,4 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

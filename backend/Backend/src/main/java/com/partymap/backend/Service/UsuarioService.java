@@ -1,17 +1,20 @@
-package com.partymap.backend.Service;
+package com.partymap.backend.service;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import com.partymap.backend.Model.Usuario;
+import com.partymap.backend.model.Usuario;
+
+
 
 /**
  * Servicio para la gestión de usuarios en el sistema PartyMap.
  * Incluye funcionalidades para sincronizar usuarios desde Azure B2C.
  */
 public interface UsuarioService {
+    
     
     /**
      * Obtiene todos los usuarios del sistema
@@ -97,4 +100,12 @@ public interface UsuarioService {
      * Busca un usuario por email y lo crea si no existe
      */
     Usuario findOrCreateUsuarioByEmail(String email, String nombreAzure, String apellidoAzure, String azureB2cId, String rolAzure, String rutProductor);
+
+    /**
+     * Método de prueba para validar cobertura en SonarQube
+     */
+    String saludoTest();
+
 } 
+
+

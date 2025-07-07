@@ -1,6 +1,6 @@
-package com.partymap.backend.DTO;
+package com.partymap.backend.dto;
 
-import com.partymap.backend.Model.TipoUsuario;
+import com.partymap.backend.model.TipoUsuario;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

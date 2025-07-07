@@ -1,4 +1,4 @@
-package com.partymap.backend.Controller;
+package com.partymap.backend.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.partymap.backend.Config.SecurityUtils;
-import com.partymap.backend.DTO.UsuarioResponseDTO;
-import com.partymap.backend.Exceptions.NotFoundException;
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Service.UsuarioService;
+import com.partymap.backend.config.SecurityUtils;
+import com.partymap.backend.dto.UsuarioResponseDTO;
+import com.partymap.backend.exceptions.NotFoundException;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.service.UsuarioService;
 
 /**
  * Controlador REST para la gestión de usuarios.

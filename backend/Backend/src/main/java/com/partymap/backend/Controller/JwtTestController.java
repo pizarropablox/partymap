@@ -1,4 +1,4 @@
-package com.partymap.backend.Controller;
+package com.partymap.backend.controller;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.partymap.backend.Model.Usuario;
-import com.partymap.backend.Service.UsuarioService;
+import com.partymap.backend.model.Usuario;
+import com.partymap.backend.service.UsuarioService;
 
 /**
  * Controlador para pruebas de JWT y sincronización de usuarios.

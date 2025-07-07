@@ -1,4 +1,4 @@
-package com.partymap.backend.Config;
+package com.partymap.backend.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
