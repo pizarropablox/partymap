@@ -1,5 +1,6 @@
 package com.partymap.backend.service;
 
+import com.partymap.backend.dto.ReservaResponseDTO;
 import com.partymap.backend.model.EstadoReserva;
 import com.partymap.backend.model.Evento;
 import com.partymap.backend.model.Reserva;
@@ -8,24 +9,35 @@ import com.partymap.backend.repository.EventoRepository;
 import com.partymap.backend.repository.ReservaRepository;
 import com.partymap.backend.repository.UsuarioRepository;
 import com.partymap.backend.service.Impl.ReservaServiceImpl;
+import com.partymap.backend.exceptions.NotFoundException;
+
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Arrays;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import java.lang.reflect.Field;
+
 
 @ExtendWith(MockitoExtension.class)
 public class ReservaServiceImplTest {
@@ -41,6 +53,10 @@ public class ReservaServiceImplTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+
+    
+
 
     @Test
     void testGetAllReservas() {
@@ -622,13 +638,13 @@ public class ReservaServiceImplTest {
     }
 
     @Test
-void testIsReservaActiva_true() {
-    Reserva reserva = new Reserva();
-    Reserva spyReserva = spy(reserva);
-    doReturn(true).when(spyReserva).isActiva();
-    when(reservaRepository.findById(2L)).thenReturn(Optional.of(spyReserva));
-    assertTrue(reservaService.isReservaActiva(2L));
-}
+    void testIsReservaActiva_true() {
+        Reserva reserva = new Reserva();
+        Reserva spyReserva = spy(reserva);
+        doReturn(true).when(spyReserva).isActiva();
+        when(reservaRepository.findById(2L)).thenReturn(Optional.of(spyReserva));
+        assertTrue(reservaService.isReservaActiva(2L));
+    }
 
     @Test
     void testIsReservaActiva_false() {
@@ -658,4 +674,212 @@ void testIsReservaActiva_true() {
         assertNotNull(estadisticas);
         assertTrue(estadisticas instanceof Map);
     }
+   
+
+   @Test
+    void testGetPrecioTotalReservaFound() {
+        Long reservaId = 1L;
+        Reserva reserva = new Reserva();
+        reserva.setPrecioTotal(new BigDecimal("123.45"));
+        
+        when(reservaRepository.findById(reservaId)).thenReturn(Optional.of(reserva));
+        
+        BigDecimal resultado = reservaService.getPrecioTotalReserva(reservaId);
+        
+        assertEquals(new BigDecimal("123.45"), resultado);
+    }
+
+    @Test
+    void testGetPrecioTotalReservaNotFound() {
+        Long reservaId = 999L;
+        when(reservaRepository.findById(reservaId)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            reservaService.getPrecioTotalReserva(reservaId);
+        });
+
+        assertTrue(exception.getMessage().contains("Reserva no encontrada"));
+    }
+
+        
+
+    @Test
+    void testReactivarReservaSuccess() {
+        Long reservaId = 1L;
+        int cantidad = 2;
+
+        // Crear mock del evento y simular comportamiento
+        Evento eventoMock = mock(Evento.class);
+        when(eventoMock.isDisponible()).thenReturn(true);
+        when(eventoMock.getCuposDisponibles()).thenReturn(10);
+
+        // Crear reserva real y configurar comportamiento
+        Reserva reserva = new Reserva();
+        reserva.setId(reservaId);
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        reserva.setCantidad(cantidad);
+        reserva.setEvento(eventoMock);
+
+        // Mock repositorio
+        when(reservaRepository.findById(reservaId)).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Ejecutar lógica
+        Reserva result = reservaService.reactivarReserva(reservaId);
+
+        // Validaciones
+        assertNotNull(result);
+        assertEquals(EstadoReserva.RESERVADA, result.getEstado());
+
+        verify(reservaRepository).findById(reservaId);
+        verify(reservaRepository).save(reserva);
+    }
+
+        
+
+    @Test
+    void testGetReservasByEventoId_CasoExitoso() {
+        // Arrange
+        Long eventoId = 100L;
+
+        Evento evento1 = new Evento();
+        evento1.setId(eventoId);
+
+        Evento evento2 = new Evento();
+        evento2.setId(200L); // otro evento
+
+        Reserva reservaActivaEvento1 = new Reserva();
+        reservaActivaEvento1.setActivo(1);
+        reservaActivaEvento1.setEvento(evento1);
+
+        Reserva reservaInactivaEvento1 = new Reserva();
+        reservaInactivaEvento1.setActivo(0);
+        reservaInactivaEvento1.setEvento(evento1);
+
+        Reserva reservaActivaEvento2 = new Reserva();
+        reservaActivaEvento2.setActivo(1);
+        reservaActivaEvento2.setEvento(evento2);
+
+        List<Reserva> todasLasReservas = Arrays.asList(
+                reservaActivaEvento1,
+                reservaInactivaEvento1,
+                reservaActivaEvento2
+        );
+
+        when(reservaRepository.findAll()).thenReturn(todasLasReservas);
+
+        // Act
+        List<Reserva> resultado = reservaService.getReservasByEventoId(eventoId);
+
+        // Assert
+        assertNotNull(resultado);
+        assertEquals(1, resultado.size());
+        assertEquals(eventoId, resultado.get(0).getEvento().getId());
+        assertEquals(1, resultado.get(0).getActivo());
+
+        verify(reservaRepository, times(1)).findAll();
+    }
+
+
+    @Test
+    void testDeleteReserva_CasoExitoso() throws IOException {
+        // Arrange
+        Reserva reserva = new Reserva();
+        reserva.setId(1L);
+        reserva.setActivo(1);
+
+        when(reservaRepository.existsById(1L)).thenReturn(true);
+        when(reservaRepository.save(any(Reserva.class))).thenReturn(reserva);
+
+        // Act
+        reservaService.deleteReserva(reserva);
+
+        // Assert
+        assertEquals(0, reserva.getActivo()); // debe estar desactivada
+        verify(reservaRepository).save(reserva);
+    }
+
+    @Test
+    void testDeleteReserva_ReservaNoEncontrada() {
+        // Arrange
+        Reserva reserva = new Reserva();
+        reserva.setId(99L);
+
+        when(reservaRepository.existsById(99L)).thenReturn(false);
+
+        // Act & Assert
+        NotFoundException exception = assertThrows(
+            NotFoundException.class,
+            () -> reservaService.deleteReserva(reserva)
+        );
+
+        assertEquals("Reserva no encontrada con ID: 99", exception.getMessage());
+        verify(reservaRepository, never()).save(any());
+    }
+
+
+    @Test
+    void testReactivarReserva_EventoNoDisponible_LanzaExcepcion() {
+        Evento evento = mock(Evento.class);
+        when(evento.isDisponible()).thenReturn(false);
+
+        Reserva reserva = mock(Reserva.class);
+        when(reserva.isCancelada()).thenReturn(true);
+        when(reserva.getEvento()).thenReturn(evento);
+        when(reservaRepository.findById(1L)).thenReturn(Optional.of(reserva));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            reservaService.reactivarReserva(1L);
+        });
+
+        assertEquals("No se puede reactivar la reserva porque el evento no está disponible", exception.getMessage());
+    }
+
+        
+
+    @Test
+    void testReactivarReserva_ReservaNoEncontrada_LanzaNotFoundException() {
+        when(reservaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            reservaService.reactivarReserva(99L);
+        });
+
+        assertEquals("Reserva no encontrada con ID: 99", exception.getMessage());
+    }
+
+    
+
+    @Test
+    void testReactivarReserva_CasoExitoso() {
+        // Arrange
+        Long reservaId = 1L;
+
+        Reserva reservaMock = mock(Reserva.class);
+        Evento eventoMock = mock(Evento.class);
+
+        when(reservaMock.isCancelada()).thenReturn(true);
+        when(reservaMock.getEvento()).thenReturn(eventoMock);
+        when(reservaMock.getCantidad()).thenReturn(2);
+
+        when(eventoMock.isDisponible()).thenReturn(true);
+        when(eventoMock.getCuposDisponibles()).thenReturn(5); // ← Aquí el cambio: Integer en lugar de long
+
+        when(reservaRepository.findById(reservaId)).thenReturn(Optional.of(reservaMock));
+        when(reservaRepository.save(reservaMock)).thenReturn(reservaMock);
+
+        // Act
+        Reserva resultado = reservaService.reactivarReserva(reservaId);
+
+        // Assert
+        assertNotNull(resultado);
+        verify(reservaMock).setEstado(EstadoReserva.RESERVADA);
+        verify(reservaRepository).save(reservaMock);
+    }
+
+
+
+
+
+
 }
