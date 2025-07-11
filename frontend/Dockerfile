@@ -1,5 +1,4 @@
-# Dockerfile para aplicación Angular - Solo Desarrollo
-# Usar Node.js 20 como imagen base
+# Dockerfile para aplicación Angular - Desarrollo y Producción
 FROM node:20-alpine
 
 # Establecer directorio de trabajo
@@ -14,8 +13,8 @@ RUN npm ci
 # Copiar todo el código fuente
 COPY . .
 
-# Exponer puerto 4200 (puerto por defecto de Angular)
+# Exponer puerto 4200
 EXPOSE 4200
 
-# Comando para ejecutar en desarrollo
+# Comando para ejecutar con configuración optimizada
 CMD ["npm", "start", "--", "--host", "0.0.0.0", "--port", "4200"] 

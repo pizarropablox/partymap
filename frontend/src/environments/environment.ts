@@ -11,6 +11,7 @@
       
       // URL del backend
       apiUrl: 'http://localhost:8085',
+      //apiUrl: 'http://18.235.227.189:8085',
       
       // Configuración de Azure AD B2C - VALORES REALES
       msalConfig: {

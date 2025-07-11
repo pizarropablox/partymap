@@ -9,6 +9,7 @@ import { ReservaService } from '../../services/reserva.service';
 import { FileUploadService } from '../../services/file-upload.service';
 import { FileStorageService } from '../../services/file-storage.service';
 import { EventNotificationService } from '../../services/event-notification.service';
+import { ApiEndpoints } from '../../config/api-endpoints';
 
 interface Evento {
   id: number;
@@ -174,7 +175,7 @@ export class EventsComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      this.http.get<any>('http://localhost:8085/usuario/current', { headers }).subscribe({
+      this.http.get<any>(ApiEndpoints.USUARIO.CURRENT, { headers }).subscribe({
         next: (response) => {
           console.log('Debug - Respuesta directa de /usuario/current:', response);
           
@@ -205,7 +206,7 @@ export class EventsComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      this.http.get<any>('http://localhost:8085/usuario/current', { headers }).subscribe({
+      this.http.get<any>(ApiEndpoints.USUARIO.CURRENT, { headers }).subscribe({
         next: (response) => {
           console.log('Debug - Usuario actual response (sync):', response);
           
@@ -305,7 +306,7 @@ export class EventsComponent implements OnInit {
    * Carga las ubicaciones disponibles para el formulario
    */
   cargarUbicaciones() {
-    this.http.get<UbicacionEvento[]>('http://localhost:8085/ubicacion/all').subscribe({
+    this.http.get<UbicacionEvento[]>(ApiEndpoints.UBICACION.ALL).subscribe({
       next: (data) => {
         this.ubicaciones = data;
       },

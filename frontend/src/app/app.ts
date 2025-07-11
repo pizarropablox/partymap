@@ -13,6 +13,7 @@ import { MensajeModalComponent } from './shared/mensaje-modal.component';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { InteractionStatus, EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'html-app',
@@ -31,10 +32,11 @@ export class App implements OnInit, OnDestroy {
   constructor(
     private msalService: MsalService, 
     private msalBroadcastService: MsalBroadcastService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     // Inicializar el servicio de autenticación de Microsoft
-    this.msalService.initialize();
+    this.authService.initialize();
     
     // Escuchar cambios de ruta para detectar cuando estamos en la página del mapa
     this.router.events.pipe(
@@ -55,35 +57,39 @@ export class App implements OnInit, OnDestroy {
     this.handleAuthResponse();
 
     // Habilitar eventos de almacenamiento de cuentas para sincronización entre pestañas
-    this.msalService.instance.enableAccountStorageEvents();
+    this.authService.enableAccountStorageEvents();
     
-    // Escuchar eventos de agregar/remover cuentas
-    this.msalBroadcastService.msalSubject$
-      .pipe(
-        filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED),
-        takeUntil(this._destroying$)
-      )
-      .subscribe((result: EventMessage) => {
-        if (this.msalService.instance.getAllAccounts().length === 0) {
-          // Si no hay cuentas, redirigir al inicio
-          window.location.pathname = '/';
-        } else {
-          this.setLoginDisplay();
-        }
-      });
+    // Escuchar eventos de agregar/remover cuentas (solo si MSAL está disponible)
+    if (this.msalBroadcastService) {
+      this.msalBroadcastService.msalSubject$
+        .pipe(
+          filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED),
+          takeUntil(this._destroying$)
+        )
+        .subscribe((result: EventMessage) => {
+          if (this.authService.getAllAccounts().length === 0) {
+            // Si no hay cuentas, redirigir al inicio
+            window.location.pathname = '/';
+          } else {
+            this.setLoginDisplay();
+          }
+        });
+    }
 
-    // Escuchar cambios en el estado de interacción de autenticación
-    this.msalBroadcastService.inProgress$
-      .pipe(
-        filter((status: InteractionStatus) => status === InteractionStatus.None),
-        takeUntil(this._destroying$)
-      )
-      .subscribe(() => {
-        this.setLoginDisplay();
-        this.checkAndSetActiveAccount();
-        // Obtener y guardar el token después de que la interacción se complete
-        this.acquireAndSaveToken();
-      });
+    // Escuchar cambios en el estado de interacción de autenticación (solo si MSAL está disponible)
+    if (this.msalBroadcastService) {
+      this.msalBroadcastService.inProgress$
+        .pipe(
+          filter((status: InteractionStatus) => status === InteractionStatus.None),
+          takeUntil(this._destroying$)
+        )
+        .subscribe(() => {
+          this.setLoginDisplay();
+          this.checkAndSetActiveAccount();
+          // Obtener y guardar el token después de que la interacción se complete
+          this.acquireAndSaveToken();
+        });
+    }
   }
 
   /**
@@ -106,10 +112,10 @@ export class App implements OnInit, OnDestroy {
     // Verificar si hay un token en el fragmento de la URL
     const currentUrl = window.location.href;
     if (currentUrl.includes('#id_token=')) {
-      this.msalService.instance.handleRedirectPromise().then((response: AuthenticationResult | null) => {
+      this.authService.handleRedirectPromise().then((response: AuthenticationResult | null) => {
         if (response) {
           // Configurar la cuenta activa
-          this.msalService.instance.setActiveAccount(response.account);
+          this.authService.setActiveAccount(response.account);
           
           // Guardar el token en localStorage inmediatamente
           this.saveTokensToLocalStorage(response);
@@ -241,9 +247,9 @@ export class App implements OnInit, OnDestroy {
    * Intenta renovar el token sin interacción del usuario
    */
   private acquireAndSaveToken() {
-    const account = this.msalService.instance.getActiveAccount();
+    const account = this.authService.getActiveAccount();
     if (account) {
-      this.msalService.acquireTokenSilent({
+      this.authService.acquireTokenSilent({
         scopes: ['openid', 'profile', 'email'],
         account: account
       }).subscribe({
@@ -268,7 +274,7 @@ export class App implements OnInit, OnDestroy {
    * Determina si mostrar elementos de usuario autenticado o no
    */
   setLoginDisplay() {
-    const accounts = this.msalService.instance.getAllAccounts();
+    const accounts = this.authService.getAllAccounts();
     this.loginDisplay = accounts.length > 0;
   }
 
@@ -277,11 +283,11 @@ export class App implements OnInit, OnDestroy {
    * Asegura que siempre haya una cuenta activa si existen cuentas disponibles
    */
   checkAndSetActiveAccount() {
-    let activeAccount = this.msalService.instance.getActiveAccount();
+    let activeAccount = this.authService.getActiveAccount();
 
-    if (!activeAccount && this.msalService.instance.getAllAccounts().length > 0) {
-      let accounts = this.msalService.instance.getAllAccounts();
-      this.msalService.instance.setActiveAccount(accounts[0]);
+    if (!activeAccount && this.authService.getAllAccounts().length > 0) {
+      let accounts = this.authService.getAllAccounts();
+      this.authService.setActiveAccount(accounts[0]);
     }
   }
 

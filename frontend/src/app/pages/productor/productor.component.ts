@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MensajeService } from '../../shared/mensaje.service';
+import { ApiEndpoints } from '../../config/api-endpoints';
 
 interface Usuario {
   id: number;
@@ -232,7 +233,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       });
 
       // Obtener el usuario actual desde el endpoint
-      const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
+      const userResponse = await this.http.get<any>(ApiEndpoints.USUARIO.CURRENT, { headers }).toPromise();
       console.log('Respuesta del endpoint /usuario/current:', userResponse);
       
       if (userResponse && userResponse.id) {
@@ -377,7 +378,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         console.log('Obteniendo usuario actual desde endpoint...');
         try {
           // Obtener el usuario actual desde el endpoint
-          const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
+          const userResponse = await this.http.get<any>(ApiEndpoints.USUARIO.CURRENT, { headers }).toPromise();
           console.log('Respuesta del endpoint /usuario/current:', userResponse);
           
           if (userResponse && userResponse.id) {
@@ -444,12 +445,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
       };
 
       console.log('Creando productor con datos:', JSON.stringify(productorData, null, 2));
-      console.log('Endpoint:', 'http://localhost:8085/usuario/crear-productor');
+      console.log('Endpoint:', ApiEndpoints.USUARIO.CREAR_PRODUCTOR);
       console.log('Headers:', headers);
 
       // Verificar si el usuario ya tiene un productor
       try {
-        const productorExistente = await this.http.get<any>(`http://localhost:8085/usuario/productor/${usuarioId}`, { headers }).toPromise();
+        const productorExistente = await this.http.get<any>(ApiEndpoints.USUARIO.PRODUCTOR(usuarioId!.toString()), { headers }).toPromise();
         if (productorExistente) {
           this.mensajeService.mostrarError('Ya existe un usuario para este ID. No se puede crear otro.');
           return;
@@ -463,7 +464,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       }
 
       // Realizar la petición POST al backend
-      const response = await this.http.post<any>('http://localhost:8085/usuario/crear-productor', productorData, { headers }).toPromise();
+      const response = await this.http.post<any>(ApiEndpoints.USUARIO.CREAR_PRODUCTOR, productorData, { headers }).toPromise();
       
       console.log('Respuesta del servidor:', response);
 
@@ -599,12 +600,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
         ...(token && { 'Authorization': `Bearer ${token}` })
       });
 
-      console.log('Intentando cargar usuarios desde:', 'http://localhost:8085/usuario/all');
+      console.log('Intentando cargar usuarios desde:', ApiEndpoints.USUARIO.ALL);
       console.log('Headers:', headers);
 
       // Primero probar si el servidor está disponible
       try {
-        const response = await this.http.get<any[]>('http://localhost:8085/usuario/all', { headers }).toPromise();
+        const response = await this.http.get<any[]>(ApiEndpoints.USUARIO.ALL, { headers }).toPromise();
         
         console.log('Respuesta del servidor:', response);
         
@@ -635,7 +636,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
           console.log('Probando sin headers de autorización...');
           
           try {
-            const responseWithoutAuth = await this.http.get<any[]>('http://localhost:8085/usuario/all').toPromise();
+            const responseWithoutAuth = await this.http.get<any[]>(ApiEndpoints.USUARIO.ALL).toPromise();
             
             if (responseWithoutAuth) {
               this.productores = responseWithoutAuth.map(item => ({
@@ -665,7 +666,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       let mensajeError = 'Error al cargar los usuarios. Por favor, inténtalo de nuevo.';
       
       if (error.status === 0) {
-        mensajeError = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose en http://localhost:8085';
+        mensajeError = `No se puede conectar con el servidor. Verifica que el backend esté ejecutándose en ${ApiEndpoints.getBaseUrl()}`;
       } else if (error.status === 401) {
         mensajeError = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
         if (limpiarSesionEnError) {
@@ -913,7 +914,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Hacer una llamada al endpoint para verificar si el productor tiene eventos
       const response = await this.http.get<any[]>(
-        `http://localhost:8085/evento/usuario/${productorId}`,
+        ApiEndpoints.EVENTO.POR_USUARIO(productorId),
         { headers }
       ).toPromise();
 
@@ -1005,11 +1006,11 @@ export class ProductorComponent implements OnInit, OnDestroy {
       });
 
       console.log('Eliminando productor ID:', productor.id);
-      console.log('Endpoint:', `http://localhost:8085/usuario/eliminar/${productor.id}`);
+      console.log('Endpoint:', ApiEndpoints.USUARIO.ELIMINAR(productor.id));
 
       // Realizar la petición DELETE al endpoint correcto
       const response = await this.http.delete<any>(
-        `http://localhost:8085/usuario/eliminar/${productor.id}`,
+        ApiEndpoints.USUARIO.ELIMINAR(productor.id),
         { headers }
       ).toPromise();
 
@@ -1122,12 +1123,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
       console.log('RUT antes de limpiar:', this.productorEnEdicion.rutProductor);
       console.log('RUT después de limpiar:', rutLimpio);
       console.log('Datos completos a enviar:', JSON.stringify(datosActualizados, null, 2));
-      console.log('Endpoint:', `http://localhost:8085/usuario/actualizar/${this.productorEnEdicion.id}`);
+      console.log('Endpoint:', ApiEndpoints.USUARIO.ACTUALIZAR(this.productorEnEdicion.id));
       console.log('Headers:', headers);
 
       // Realizar la petición PUT
       const response = await this.http.put<any>(
-        `http://localhost:8085/usuario/actualizar/${this.productorEnEdicion.id}`,
+        ApiEndpoints.USUARIO.ACTUALIZAR(this.productorEnEdicion.id),
         datosActualizados,
         { headers }
       ).toPromise();
