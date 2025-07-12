@@ -38,4 +38,10 @@ describe('UbicacionService', () => {
     expect(req.request.method).toBe('GET');
     req.flush(mockResponse);
   });
+
+  // FUNCIONANDO
+
+
+
+
 });
