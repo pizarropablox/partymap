@@ -8,7 +8,7 @@ import com.partymap.backend.model.Usuario;
 import com.partymap.backend.repository.EventoRepository;
 import com.partymap.backend.repository.ReservaRepository;
 import com.partymap.backend.repository.UsuarioRepository;
-import com.partymap.backend.service.Impl.ReservaServiceImpl;
+import com.partymap.backend.service.impl.ReservaServiceImpl;
 import com.partymap.backend.exceptions.NotFoundException;
 
 

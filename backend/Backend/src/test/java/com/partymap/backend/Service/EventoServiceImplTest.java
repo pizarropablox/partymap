@@ -5,7 +5,7 @@ import com.partymap.backend.model.Ubicacion;
 import com.partymap.backend.model.Usuario;
 import com.partymap.backend.repository.EventoRepository;
 import com.partymap.backend.repository.UbicacionRepository;
-import com.partymap.backend.service.Impl.EventoServiceImpl;
+import com.partymap.backend.service.impl.EventoServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

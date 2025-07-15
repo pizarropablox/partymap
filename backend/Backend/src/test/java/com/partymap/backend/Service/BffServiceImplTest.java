@@ -1,7 +1,8 @@
 package com.partymap.backend.service;
 
-import com.partymap.backend.restclients.ClienteRest;
-import com.partymap.backend.service.Impl.BffServiceImpl;
+
+import com.partymap.backend.restClients.ClienteRest;
+import com.partymap.backend.service.impl.BffServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

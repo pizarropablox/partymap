@@ -6,6 +6,8 @@ import com.partymap.backend.model.Ubicacion;
 import com.partymap.backend.service.UbicacionService;
 import com.partymap.backend.exceptions.NotFoundException;
 
+import com.partymap.backend.dto.UbicacionDTO;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

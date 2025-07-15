@@ -3,7 +3,7 @@ package com.partymap.backend.service;
 import com.partymap.backend.model.TipoUsuario;
 import com.partymap.backend.model.Usuario;
 import com.partymap.backend.repository.UsuarioRepository;
-import com.partymap.backend.service.Impl.UsuarioServiceImpl;
+import com.partymap.backend.service.impl.UsuarioServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;

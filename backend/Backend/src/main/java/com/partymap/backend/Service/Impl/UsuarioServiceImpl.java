@@ -1,4 +1,4 @@
-package com.partymap.backend.service.Impl;
+package com.partymap.backend.service.impl;
 
 import java.util.List;
 import java.util.Optional;
