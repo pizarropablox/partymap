@@ -255,7 +255,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    */
   loadEventLocations() {
     // Cargar eventos desde el endpoint de eventos
-    this.http.get<any[]>('http://localhost:8085/evento/all').subscribe({
+    this.http.get<any[]>('http://18.235.227.189:8085/evento/all').subscribe({
       next: (eventos) => {
         if (eventos.length === 0) {
           this.markers = [];
@@ -563,14 +563,14 @@ export class HomeMapComponent implements OnInit, OnDestroy {
     try {
       return new Promise((resolve) => {
         // Primero obtener el usuario actual para obtener su ID
-        this.http.get<any>('http://localhost:8085/usuario/current', {
+        this.http.get<any>('http://18.235.227.189:8085/usuario/current', {
           headers: { 'Authorization': `Bearer ${token}` }
         }).subscribe({
           next: (usuario) => {
             const usuarioId = usuario.id;
             
             // Ahora obtener las reservas del usuario específico
-            this.http.get<any[]>(`http://localhost:8085/reserva/usuario/${usuarioId}`, {
+            this.http.get<any[]>(`http://18.235.227.189:8085/reserva/usuario/${usuarioId}`, {
               headers: { 'Authorization': `Bearer ${token}` }
             }).subscribe({
               next: (reservas) => {
@@ -777,7 +777,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
     // Obtener información del usuario actual
     const token = localStorage.getItem('jwt') || localStorage.getItem('idToken');
     
-    this.http.get<any>('http://localhost:8085/usuario/current', {
+            this.http.get<any>('http://18.235.227.189:8085/usuario/current', {
       headers: { 'Authorization': `Bearer ${token}` }
     }).subscribe({
       next: (userInfo) => {

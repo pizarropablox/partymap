@@ -48,7 +48,7 @@ La URL base se configura en los archivos de environment:
 ```typescript
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8085', // Cambiar aquí para modificar la URL base
+  apiUrl: 'http://18.235.227.189:8085', // Cambiar aquí para modificar la URL base
   // ... otras configuraciones
 };
 ```
@@ -104,7 +104,7 @@ Para migrar código existente:
 
 **Antes:**
 ```typescript
-const response = await this.http.get('http://localhost:8085/usuario/all').toPromise();
+const response = await this.http.get('http://18.235.227.189:8085/usuario/all').toPromise();
 ```
 
 **Después:**

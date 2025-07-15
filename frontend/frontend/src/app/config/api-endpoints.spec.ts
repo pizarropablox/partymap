@@ -1,7 +1,7 @@
 import { ApiEndpoints } from './api-endpoints';
 
 describe('ApiEndpoints', () => {
-  const mockBaseUrl = 'http://localhost:8085';
+  const mockBaseUrl = 'http://18.235.227.189:8085';
 
   describe('RESERVA endpoints', () => {
     it('should have correct reserva endpoints', () => {

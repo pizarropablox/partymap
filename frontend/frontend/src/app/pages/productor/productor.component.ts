@@ -225,7 +225,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       });
 
       // Obtener el usuario actual desde el endpoint
-      const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
+      const userResponse = await this.http.get<any>('http://18.235.227.189:8085/usuario/current', { headers }).toPromise();
       
       if (userResponse && userResponse.id) {
         this.usuarioActualId = userResponse.id;
@@ -364,7 +364,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
   
         try {
           // Obtener el usuario actual desde el endpoint
-          const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
+          const userResponse = await this.http.get<any>('http://18.235.227.189:8085/usuario/current', { headers }).toPromise();
           if (userResponse && userResponse.id) {
             usuarioId = userResponse.id;
             // Actualizar la variable de clase
@@ -425,7 +425,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Verificar si el usuario ya tiene un productor
       try {
-        const productorExistente = await this.http.get<any>(`http://localhost:8085/usuario/productor/${usuarioId}`, { headers }).toPromise();
+        const productorExistente = await this.http.get<any>(`http://18.235.227.189:8085/usuario/productor/${usuarioId}`, { headers }).toPromise();
         if (productorExistente) {
           this.mensajeService.mostrarError('Ya existe un usuario para este ID. No se puede crear otro.');
           return;
@@ -439,7 +439,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       }
 
       // Realizar la petición POST al backend
-      const response = await this.http.post<any>('http://localhost:8085/usuario/crear-productor', productorData, { headers }).toPromise();
+              const response = await this.http.post<any>('http://18.235.227.189:8085/usuario/crear-productor', productorData, { headers }).toPromise();
       
 
 
@@ -571,7 +571,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Primero probar si el servidor está disponible
       try {
-        const response = await this.http.get<any[]>('http://localhost:8085/usuario/all', { headers }).toPromise();
+        const response = await this.http.get<any[]>('http://18.235.227.189:8085/usuario/all', { headers }).toPromise();
         
 
         
@@ -602,7 +602,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
           
           try {
-            const responseWithoutAuth = await this.http.get<any[]>('http://localhost:8085/usuario/all').toPromise();
+            const responseWithoutAuth = await this.http.get<any[]>('http://18.235.227.189:8085/usuario/all').toPromise();
             
             if (responseWithoutAuth) {
               this.productores = responseWithoutAuth.map(item => ({
@@ -632,7 +632,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       let mensajeError = 'Error al cargar los usuarios. Por favor, inténtalo de nuevo.';
       
       if (error.status === 0) {
-        mensajeError = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose en http://localhost:8085';
+        mensajeError = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose en http://18.235.227.189:8085';
       } else if (error.status === 401) {
         mensajeError = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
         if (limpiarSesionEnError) {
@@ -875,7 +875,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Hacer una llamada al endpoint para verificar si el productor tiene eventos
       const response = await this.http.get<any[]>(
-        `http://localhost:8085/evento/usuario/${productorId}`,
+        `http://18.235.227.189:8085/evento/usuario/${productorId}`,
         { headers }
       ).toPromise();
 
@@ -970,7 +970,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Realizar la petición DELETE al endpoint correcto
       const response = await this.http.delete<any>(
-        `http://localhost:8085/usuario/eliminar/${productor.id}`,
+        `http://18.235.227.189:8085/usuario/eliminar/${productor.id}`,
         { headers }
       ).toPromise();
 
@@ -1073,7 +1073,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Realizar la petición PUT
       const response = await this.http.put<any>(
-        `http://localhost:8085/usuario/actualizar/${this.productorEnEdicion.id}`,
+        `http://18.235.227.189:8085/usuario/actualizar/${this.productorEnEdicion.id}`,
         datosActualizados,
         { headers }
       ).toPromise();

@@ -174,7 +174,7 @@ export class EventsComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      this.http.get<any>('http://localhost:8085/usuario/current', { headers }).subscribe({
+      this.http.get<any>('http://18.235.227.189:8085/usuario/current', { headers }).subscribe({
         next: (response) => {
           console.log('Debug - Respuesta directa de /usuario/current:', response);
           
@@ -205,7 +205,7 @@ export class EventsComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      this.http.get<any>('http://localhost:8085/usuario/current', { headers }).subscribe({
+      this.http.get<any>('http://18.235.227.189:8085/usuario/current', { headers }).subscribe({
         next: (response) => {
           console.log('Debug - Usuario actual response (sync):', response);
           
@@ -250,7 +250,7 @@ export class EventsComponent implements OnInit {
       'Content-Type': 'application/json'
     });
 
-    this.http.get<any>('http://localhost:8085/usuario/current', { headers }).subscribe({
+    this.http.get<any>('http://18.235.227.189:8085/usuario/current', { headers }).subscribe({
       next: (response) => {
         console.log('Debug - Respuesta de /usuario/current:', response);
         
@@ -305,7 +305,7 @@ export class EventsComponent implements OnInit {
    * Carga las ubicaciones disponibles para el formulario
    */
   cargarUbicaciones() {
-    this.http.get<UbicacionEvento[]>('http://localhost:8085/ubicacion/all').subscribe({
+    this.http.get<UbicacionEvento[]>('http://18.235.227.189:8085/ubicacion/all').subscribe({
       next: (data) => {
         this.ubicaciones = data;
       },

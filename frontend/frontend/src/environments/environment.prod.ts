@@ -5,5 +5,5 @@ export const environment = {
   // Aquí va tu clave API de Google Maps. ¡Debe ser la misma clave real!
   googleMapsApiKey: 'AIzaSyCRQWonRBlilzJNvnyyFKaXmgn54yCL5EY', 
   // URL del backend en producción
-  apiUrl: 'http://localhost:8085',
+  apiUrl: 'http://18.235.227.189:8085',
 };

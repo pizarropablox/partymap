@@ -283,7 +283,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/usuario/productor/${usuarioId}`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/usuario/productor/${usuarioId}`);
       req.flush(mockResponse);
     });
 
@@ -309,7 +309,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/usuario/actualizar/${usuarioId}`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/usuario/actualizar/${usuarioId}`);
       expect(req.request.body).toEqual(userData);
       req.flush(mockResponse);
     });
@@ -322,7 +322,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/usuario/eliminar/${usuarioId}`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/usuario/eliminar/${usuarioId}`);
       req.flush(mockResponse);
     });
   });
@@ -373,7 +373,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/evento/actualizar/${eventoId}`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/evento/actualizar/${eventoId}`);
       expect(req.request.body).toEqual(eventoData);
       req.flush(mockResponse);
     });
@@ -386,7 +386,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/evento/eliminar/${eventoId}`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/evento/eliminar/${eventoId}`);
       req.flush(mockResponse);
     });
 
@@ -397,7 +397,7 @@ describe('EndpointsService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`http://localhost:8085/evento/mis-estadisticas`);
+      const req = httpMock.expectOne(`http://18.235.227.189:8085/evento/mis-estadisticas`);
       req.flush(mockResponse);
     });
   });
