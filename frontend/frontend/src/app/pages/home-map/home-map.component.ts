@@ -101,22 +101,17 @@ export class HomeMapComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    console.log('🚀 Inicializando componente del mapa...');
-    
     // Agregar clase al body para prevenir scrollbars
     document.body.classList.add('map-page');
     
     // Asegurar que Google Maps esté cargado antes de inicializar el mapa
     try {
-      console.log('🗺️ Cargando Google Maps...');
       await this.googleMapsLoader.load();
       
       // Verificar que Google Maps esté disponible
       if (!this.googleMapsLoader.isLoaded()) {
         throw new Error('Google Maps no se cargó correctamente');
       }
-      
-      console.log('✅ Google Maps cargado correctamente');
       
       // Configurar opciones del mapa
       this.configureMapOptions();
@@ -125,14 +120,12 @@ export class HomeMapComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.mapLoaded = true;
         this.cdr.detectChanges();
-        console.log('🗺️ Mapa marcado como cargado');
       }, 100);
       
       // Suscribirse a cambios de ubicación seleccionada
       this.navigationSubscription = this.mapNavigationService.selectedLocation$.subscribe(
         (ubicacion) => {
           if (ubicacion) {
-            console.log('📍 Navegando a ubicación seleccionada:', ubicacion);
             this.navigateToLocation(ubicacion);
           }
         }
@@ -140,12 +133,10 @@ export class HomeMapComponent implements OnInit, OnDestroy {
       
       // Suscribirse a notificaciones de nuevos eventos
       this.eventNotificationSubscription = this.eventNotificationService.eventCreated$.subscribe(() => {
-        console.log('📢 Recibida notificación de nuevo evento, recargando eventos...');
         this.loadEventLocations();
       });
       
       // Cargar ubicaciones de eventos desde el backend
-      console.log('🔄 Cargando eventos iniciales...');
       this.loadEventLocations();
       
     } catch (error) {
@@ -160,18 +151,13 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Reintenta cargar el mapa si falló la primera vez
    */
   private async retryMapLoad() {
-    console.log('🔄 Reintentando carga del mapa...');
-    
     try {
-      console.log('🗺️ Reintentando carga de Google Maps...');
       await this.googleMapsLoader.load();
       
       // Verificar que Google Maps esté disponible
       if (!this.googleMapsLoader.isLoaded()) {
         throw new Error('Google Maps no se cargó correctamente en el reintento');
       }
-      
-      console.log('✅ Google Maps cargado correctamente en el reintento');
       
       // Configurar opciones del mapa
       this.configureMapOptions();
@@ -180,14 +166,12 @@ export class HomeMapComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.mapLoaded = true;
         this.cdr.detectChanges();
-        console.log('🗺️ Mapa marcado como cargado (reintento)');
       }, 100);
       
       // Suscribirse a cambios de ubicación seleccionada
       this.navigationSubscription = this.mapNavigationService.selectedLocation$.subscribe(
         (ubicacion) => {
           if (ubicacion) {
-            console.log('📍 Navegando a ubicación seleccionada (reintento):', ubicacion);
             this.navigateToLocation(ubicacion);
           }
         }
@@ -195,12 +179,10 @@ export class HomeMapComponent implements OnInit, OnDestroy {
       
       // Suscribirse a notificaciones de nuevos eventos
       this.eventNotificationSubscription = this.eventNotificationService.eventCreated$.subscribe(() => {
-        console.log('📢 Recibida notificación de nuevo evento, recargando eventos (reintento)...');
         this.loadEventLocations();
       });
       
       // Cargar ubicaciones de eventos desde el backend
-      console.log('🔄 Cargando eventos después del reintento...');
       this.loadEventLocations();
       
     } catch (error) {
@@ -249,8 +231,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Reinicializa completamente el mapa
    */
   public reinitializeMap() {
-    console.log('🔄 Reinicializando mapa completo...');
-    
     // Limpiar marcadores actuales
     this.markers = [];
     
@@ -259,7 +239,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
     
     // Recargar eventos después de un breve delay
     setTimeout(() => {
-      console.log('🔄 Recargando eventos después de reinicialización...');
       this.loadEventLocations();
     }, 500);
   }
@@ -268,7 +247,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Recarga los eventos en el mapa (método público)
    */
   public reloadEvents() {
-    console.log('Recargando eventos manualmente...');
     this.loadEventLocations();
   }
 
@@ -276,16 +254,10 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Carga las ubicaciones de eventos desde el backend
    */
   loadEventLocations() {
-    console.log('🔄 Cargando eventos desde el backend...');
-    
     // Cargar eventos desde el endpoint de eventos
     this.http.get<any[]>('http://localhost:8085/evento/all').subscribe({
       next: (eventos) => {
-        console.log('📦 Eventos recibidos del backend:', eventos);
-        console.log('📊 Total de eventos:', eventos.length);
-        
         if (eventos.length === 0) {
-          console.log('⚠️ No hay eventos en el backend');
           this.markers = [];
           this.cdr.detectChanges();
           return;
@@ -293,22 +265,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
         
         // Mostrar información detallada de cada evento
         eventos.forEach((evento, index) => {
-          console.log(`📍 Evento ${index + 1} (ID: ${evento.id}):`, {
-            nombre: evento.nombre,
-            activo: evento.activo,
-            disponible: evento.disponible,
-            cuposDisponibles: evento.cuposDisponibles,
-            ubicacion: evento.ubicacion,
-            tieneUbicacion: !!(evento.ubicacion && evento.ubicacion.latitud && evento.ubicacion.longitud),
-            latitud: evento.ubicacion?.latitud,
-            longitud: evento.ubicacion?.longitud,
-            coordenadasExactas: {
-              lat: evento.ubicacion?.latitud,
-              lng: evento.ubicacion?.longitud,
-              tipoLat: typeof evento.ubicacion?.latitud,
-              tipoLng: typeof evento.ubicacion?.longitud
-            }
-          });
+          // Procesar cada evento
         });
         
         // Filtrar eventos - ser más permisivo
@@ -321,19 +278,13 @@ export class HomeMapComponent implements OnInit, OnDestroy {
           
           const esActivo = evento.activo === 1 || evento.activo === true;
           
-          console.log(`🔍 Filtro para evento ${evento.id}:`, {
-            nombre: evento.nombre,
-            tieneUbicacion,
-            esActivo,
-            pasaFiltro: tieneUbicacion && esActivo
-          });
+
           
           // Solo requerir que tenga ubicación válida y sea activo
           return tieneUbicacion && esActivo;
         });
         
-        console.log('✅ Eventos que pasan el filtro:', eventosDisponibles.length);
-        console.log('📍 Eventos filtrados:', eventosDisponibles);
+
         
         // Crear marcadores para los eventos disponibles
         this.markers = eventosDisponibles.map((evento: any) => {
@@ -363,23 +314,12 @@ export class HomeMapComponent implements OnInit, OnDestroy {
             }
           };
           
-          console.log(`📍 Marcador creado para evento ${evento.id}:`, {
-            nombre: evento.nombre,
-            posicion: marker.position,
-            titulo: marker.title,
-            coordenadasExactas: {
-              lat: evento.ubicacion.latitud,
-              lng: evento.ubicacion.longitud,
-              tipoLat: typeof evento.ubicacion.latitud,
-              tipoLng: typeof evento.ubicacion.longitud
-            }
-          });
+
           
           return marker;
         });
         
-        console.log('🎯 Marcadores finales creados:', this.markers.length);
-        console.log('📍 Marcadores:', this.markers);
+
         
         // Si hay eventos, centrar el mapa en el primer evento
         if (eventosDisponibles.length > 0) {
@@ -387,11 +327,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
           const nuevaLat = primerEvento.ubicacion.latitud;
           const nuevaLng = primerEvento.ubicacion.longitud;
           
-          console.log('🎯 Centrando mapa en el evento:', {
-            nombre: primerEvento.nombre,
-            lat: nuevaLat,
-            lng: nuevaLng
-          });
+
           
           // Actualizar el centro del mapa
           this.center = { lat: nuevaLat, lng: nuevaLng };
@@ -404,13 +340,12 @@ export class HomeMapComponent implements OnInit, OnDestroy {
               zoom: 14 // Zoom más cercano para ver mejor el evento
             };
             this.cdr.detectChanges();
-            console.log('✅ Mapa centrado en el evento');
+
           }, 100);
         }
         
         // Agregar un marcador de prueba temporal para verificar que el mapa funciona
         if (this.markers.length === 0) {
-          console.log('⚠️ No hay marcadores de eventos, agregando marcador de prueba...');
           const marcadorPrueba = {
             position: {
               lat: -33.4489,
@@ -433,16 +368,13 @@ export class HomeMapComponent implements OnInit, OnDestroy {
             }
           };
           this.markers = [marcadorPrueba];
-          console.log('✅ Marcador de prueba agregado');
+
         }
         
         // Forzar la detección de cambios
         this.cdr.detectChanges();
         
-        // Verificar si los marcadores se aplicaron correctamente
-        setTimeout(() => {
-          console.log('🔍 Verificación post-render - Marcadores en el DOM:', this.markers.length);
-        }, 100);
+
       },
       error: (err) => {
         console.error('❌ Error al cargar eventos:', err);
@@ -569,30 +501,26 @@ export class HomeMapComponent implements OnInit, OnDestroy {
           
           // Mostrar información de debugging
           const userType = this.getCurrentUserType();
-          console.log(`Tipo de usuario actual: ${userType}`);
-          console.log(`Usuario desde backend:`, userInfo);
-          console.log(`¿Puede hacer reservas? ${this.puedeHacerReserva}`);
+          
           
           // Mostrar mensaje informativo según el tipo de usuario
           if (userInfo.tipoUsuario) {
             const tipoUsuario = userInfo.tipoUsuario.toLowerCase();
             if (tipoUsuario === 'productor') {
-              console.log('Productor: Puede ver eventos pero no hacer reservas');
+              // Productor: Puede ver eventos pero no hacer reservas
             } else if (tipoUsuario === 'administrador') {
-              console.log('Administrador: Puede ver eventos pero no hacer reservas');
+              // Administrador: Puede ver eventos pero no hacer reservas
             } else if (tipoUsuario === 'cliente') {
-              console.log('Cliente: Puede ver eventos y hacer reservas');
+              // Cliente: Puede ver eventos y hacer reservas
             }
           }
         },
         error: (error) => {
-          console.log('Usuario no autenticado o error al obtener información:', error);
           this.usuarioInfo = null;
           this.puedeHacerReserva = false;
         }
       });
     } else {
-      console.log('No hay token de autenticación');
       this.usuarioInfo = null;
       this.puedeHacerReserva = false;
     }
@@ -602,21 +530,16 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Verifica si una reserva está activa (no cancelada)
    */
   private esReservaActiva(reserva: any): boolean {
-    console.log('🔍 Verificando si reserva está activa:', reserva);
-    
     if (!reserva) {
-      console.log('❌ No hay reserva para verificar');
       return false;
     }
     
     const estado = reserva.estado?.toLowerCase() || '';
-    console.log('📊 Estado de la reserva:', estado);
     
     // Estados que indican que la reserva NO está activa
     const estadosInactivos = ['cancelada', 'cancelado', 'cancelled', 'inactiva', 'inactivo'];
     
     const esActiva = !estadosInactivos.includes(estado);
-    console.log('✅ ¿Es reserva activa?', esActiva);
     
     return esActiva;
   }
@@ -628,22 +551,14 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * NOTA: Este método usa el endpoint /reserva/usuario que SÍ existe en el backend
    */
   async verificarReservaExistente(): Promise<{ existe: boolean; reserva?: any }> {
-    console.log('🔍 Iniciando verificación de reserva existente...');
-    
     if (!this.selectedEvento) {
-      console.log('❌ No hay evento seleccionado');
       return { existe: false };
     }
-
-    console.log('📋 Evento ID para verificar:', this.selectedEvento.id);
 
     const token = localStorage.getItem('jwt') || localStorage.getItem('idToken');
     if (!token) {
-      console.log('❌ No hay token de autenticación');
       return { existe: false };
     }
-
-    console.log('🔑 Token encontrado, haciendo petición al backend...');
 
     try {
       return new Promise((resolve) => {
@@ -652,7 +567,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
           headers: { 'Authorization': `Bearer ${token}` }
         }).subscribe({
           next: (usuario) => {
-            console.log('👤 Usuario actual obtenido:', usuario);
             const usuarioId = usuario.id;
             
             // Ahora obtener las reservas del usuario específico
@@ -660,17 +574,12 @@ export class HomeMapComponent implements OnInit, OnDestroy {
               headers: { 'Authorization': `Bearer ${token}` }
             }).subscribe({
               next: (reservas) => {
-                console.log('📦 Todas las reservas del usuario:', reservas);
-                
                 if (!reservas || reservas.length === 0) {
-                  console.log('📭 No hay reservas del usuario');
                   resolve({ existe: false });
                   return;
                 }
                 
                 // Buscar reserva para el evento actual
-                console.log('🔍 Buscando reserva para evento ID:', this.selectedEvento?.id);
-                console.log('📦 Total de reservas a revisar:', reservas.length);
                 
                 const reservaExistente = reservas.find(reserva => {
                   const eventoId = reserva.evento?.id;
@@ -678,39 +587,23 @@ export class HomeMapComponent implements OnInit, OnDestroy {
                   const esMismoEvento = eventoId === eventoSeleccionadoId;
                   const esActiva = this.esReservaActiva(reserva);
                   
-                  console.log('🔍 Comparando reserva:', {
-                    reservaId: reserva.id,
-                    eventoId: eventoId,
-                    eventoSeleccionadoId: eventoSeleccionadoId,
-                    esMismoEvento: esMismoEvento,
-                    estado: reserva.estado,
-                    esActiva: esActiva,
-                    reservaCompleta: reserva
-                  });
+
                   
                   return esMismoEvento && esActiva;
                 });
                 
                 if (reservaExistente) {
-                  console.log('✅ Reserva existente encontrada:', reservaExistente);
                   resolve({ existe: true, reserva: reservaExistente });
                 } else {
-                  console.log('❌ No se encontró reserva existente');
-                  console.log('🔍 Resumen de búsqueda:');
-                  console.log('  - Evento buscado:', this.selectedEvento?.id);
-                  console.log('  - Total de reservas:', reservas.length);
-                  console.log('  - Reservas encontradas pero no activas:', reservas.filter(r => r.evento?.id === this.selectedEvento?.id).length);
                   resolve({ existe: false });
                 }
               },
               error: (error) => {
-                console.log('❌ Error al obtener reservas del usuario:', error);
                 resolve({ existe: false });
               }
             });
           },
           error: (error) => {
-            console.log('❌ Error al obtener usuario actual:', error);
             resolve({ existe: false });
           }
         });
@@ -725,38 +618,26 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Crea una nueva reserva para el evento seleccionado
    */
   async crearReserva() {
-    console.log('🚀 Iniciando proceso de creación de reserva...');
-    
     if (!this.selectedEvento) {
       this.mostrarMensaje('No hay evento seleccionado', 'error');
       return;
     }
 
-    console.log('📋 Evento seleccionado:', this.selectedEvento);
-
     // Verificar si ya existe una reserva activa
-    console.log('🔍 Verificando si existe reserva previa...');
     const { existe, reserva } = await this.verificarReservaExistente();
     
-    console.log('📊 Resultado de verificación:', { existe, reserva });
-    
     if (existe && reserva) {
-      console.log('⚠️ Reserva existente encontrada, mostrando modal de confirmación');
       this.reservaExistente = reserva;
       this.mostrarModalConfirmacion = true;
-      console.log('✅ Modal de confirmación activado:', this.mostrarModalConfirmacion);
       
       // Forzar la detección de cambios para asegurar que el modal se muestre
       setTimeout(() => {
         this.cdr.detectChanges();
-        console.log('🔄 Detección de cambios forzada, modal debería estar visible');
-        console.log('🔍 Estado del modal después de detectChanges:', this.mostrarModalConfirmacion);
       }, 100);
       
       return;
     }
 
-    console.log('✅ No hay reserva existente, procediendo con creación...');
     // Proceder con la creación de la reserva
     await this.procesarCreacionReserva();
   }
@@ -794,7 +675,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
     }
 
     // Log en consola
-    console.log(`📢 Mensaje mostrado al usuario [${tipo}]:`, mensajeCompleto);
+
     
     // Mostrar notificación automática
     this.mensajeNotificacion = mensajeCompleto;
@@ -973,7 +854,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Notifica al mapa que debe recargar los eventos
    */
   notificarMapaRecargar() {
-    console.log('🔄 Recargando eventos en el mapa...');
     this.reloadEvents();
   }
 
@@ -986,7 +866,7 @@ export class HomeMapComponent implements OnInit, OnDestroy {
         ...this.mapOptions,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       };
-      console.log('🗺️ Opciones del mapa configuradas correctamente');
+
     }
   }
 
@@ -994,12 +874,8 @@ export class HomeMapComponent implements OnInit, OnDestroy {
    * Maneja la inicialización del mapa
    */
   onMapInitialized(map: google.maps.Map) {
-    console.log('🗺️ Mapa inicializado correctamente:', map);
-    
     // Verificar que el mapa esté funcionando
     if (map) {
-      console.log('✅ Mapa cargado y funcionando');
-      
       // Forzar un refresh del mapa después de un breve delay
       setTimeout(() => {
         google.maps.event.trigger(map, 'resize');
@@ -1007,8 +883,6 @@ export class HomeMapComponent implements OnInit, OnDestroy {
         // Centrar el mapa en las coordenadas por defecto
         map.setCenter({ lat: -33.4489, lng: -70.6693 });
         map.setZoom(12);
-        
-        console.log('🎯 Mapa centrado y configurado');
         
         // Forzar detección de cambios
         this.cdr.detectChanges();

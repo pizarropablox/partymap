@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { EndpointsService } from '../../services/endpoints.service';
 import { environment } from '../../../environments/environment';
 import { ApiEndpoints } from '../../config/api-endpoints';
+import { NavigationService } from '../../services/navigation.service';
 
 interface EstadisticasReservas {
   totalReservas: number;
@@ -63,15 +64,15 @@ export class ReportesComponent implements OnInit {
   userRole: string = '';
   userName: string = '';
 
-  constructor(private router: Router, private http: HttpClient, private endpointsService: EndpointsService) {}
+  constructor(private router: Router, private http: HttpClient, private endpointsService: EndpointsService, private navigation: NavigationService) {}
 
   async ngOnInit(): Promise<void> {
-    console.log('=== INICIO ngOnInit Reportes ===');
+
     this.obtenerUserRole();
     this.cargarEstadisticas();
     this.cargarEstadisticasEventos();
     this.cargarEstadisticasUsuarios();
-    console.log('=== FIN ngOnInit Reportes ===');
+
   }
 
   obtenerUserRole(): void {
@@ -81,7 +82,7 @@ export class ReportesComponent implements OnInit {
         const tokenPayload = this.decodeJwtToken(idToken);
         this.userName = tokenPayload.name || tokenPayload.given_name || tokenPayload.preferred_username || 'Usuario';
         this.userRole = tokenPayload.extension_Roles || 'Usuario';
-        console.log('Usuario:', this.userName, 'Rol:', this.userRole);
+    
       }
     } catch (error) {
       console.error('Error al obtener información del usuario:', error);
@@ -103,7 +104,7 @@ export class ReportesComponent implements OnInit {
   }
 
   async cargarEstadisticas(): Promise<void> {
-    console.log('=== INICIO cargarEstadisticas ===');
+
     this.cargando = true;
     this.error = '';
 
@@ -115,18 +116,14 @@ export class ReportesComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      console.log('Intentando cargar estadísticas desde:', ApiEndpoints.RESERVA.ESTADISTICAS);
-      console.log('Headers:', headers);
+
 
       // Primero probar si el servidor está disponible
       try {
         const response = await this.http.get<EstadisticasReservas>(ApiEndpoints.RESERVA.ESTADISTICAS, { headers }).toPromise();
         
-        console.log('Respuesta del servidor:', response);
-        
         if (response) {
           this.estadisticas = response;
-          console.log('Estadísticas cargadas:', this.estadisticas);
         } else {
           throw new Error('No se recibió respuesta del servidor');
         }
@@ -135,14 +132,14 @@ export class ReportesComponent implements OnInit {
         
         // Si falla con autorización, intentar sin headers
         if (httpError.status === 401 || httpError.status === 403) {
-          console.log('Probando sin headers de autorización...');
+
           
           try {
             const responseWithoutAuth = await this.http.get<EstadisticasReservas>(ApiEndpoints.RESERVA.ESTADISTICAS).toPromise();
             
             if (responseWithoutAuth) {
               this.estadisticas = responseWithoutAuth;
-              console.log('Estadísticas cargadas sin autorización:', this.estadisticas);
+
               return; // Salir si funcionó sin autorización
             }
           } catch (secondError) {
@@ -206,7 +203,7 @@ export class ReportesComponent implements OnInit {
   }
 
   limpiarSesion(): void {
-    console.log('Limpiando sesión...');
+
     
     // Limpiar todos los tokens del localStorage
     const tokensToRemove = [
@@ -225,13 +222,13 @@ export class ReportesComponent implements OnInit {
     // Limpiar también cualquier token en sessionStorage
     sessionStorage.clear();
     
-    console.log('Sesión limpiada completamente');
+
   }
 
   irAlLogin(): void {
-    console.log('Redirigiendo al login...');
+
     this.limpiarSesion();
-    window.location.href = this.AZURE_B2C_LOGIN_URL;
+    this.navigation.goTo(this.AZURE_B2C_LOGIN_URL);
   }
 
   formatearMoneda(valor: number): string {
@@ -252,7 +249,7 @@ export class ReportesComponent implements OnInit {
   }
 
   async cargarEstadisticasEventos(): Promise<void> {
-    console.log('=== INICIO cargarEstadisticasEventos ===');
+
     this.cargandoEventos = true;
     this.errorEventos = '';
 
@@ -264,18 +261,14 @@ export class ReportesComponent implements OnInit {
         'Content-Type': 'application/json'
       });
 
-      console.log('Intentando cargar estadísticas de eventos desde:', ApiEndpoints.EVENTO.MIS_ESTADISTICAS);
-      console.log('Headers:', headers);
+
 
       // Primero probar si el servidor está disponible
       try {
         const response = await this.http.get<EstadisticasEventos>(ApiEndpoints.EVENTO.MIS_ESTADISTICAS, { headers }).toPromise();
         
-        console.log('Respuesta del servidor eventos:', response);
-        
         if (response) {
           this.estadisticasEventos = response;
-          console.log('Estadísticas de eventos cargadas:', this.estadisticasEventos);
         } else {
           throw new Error('No se recibió respuesta del servidor');
         }
@@ -284,14 +277,14 @@ export class ReportesComponent implements OnInit {
         
         // Si falla con autorización, intentar sin headers
         if (httpError.status === 401 || httpError.status === 403) {
-          console.log('Probando sin headers de autorización para eventos...');
+
           
           try {
             const responseWithoutAuth = await this.http.get<EstadisticasEventos>(ApiEndpoints.EVENTO.MIS_ESTADISTICAS).toPromise();
             
             if (responseWithoutAuth) {
               this.estadisticasEventos = responseWithoutAuth;
-              console.log('Estadísticas de eventos cargadas sin autorización:', this.estadisticasEventos);
+
               return; // Salir si funcionó sin autorización
             }
           } catch (secondError) {

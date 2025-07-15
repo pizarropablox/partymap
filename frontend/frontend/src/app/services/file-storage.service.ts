@@ -33,7 +33,7 @@ export class FileStorageService {
           // Guardar en localStorage
           localStorage.setItem(this.STORAGE_KEY, JSON.stringify(existingImages));
           
-          console.log(`Imagen guardada en localStorage: ${imagePath}`);
+    
           resolve(imagePath);
         } catch (error) {
           reject(error);
@@ -77,7 +77,7 @@ export class FileStorageService {
     const storedImages = this.getStoredImages();
     delete storedImages[imagePath];
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(storedImages));
-    console.log(`Imagen eliminada del localStorage: ${imagePath}`);
+    
   }
 
   /**
@@ -85,7 +85,7 @@ export class FileStorageService {
    */
   clearAllImages(): void {
     localStorage.removeItem(this.STORAGE_KEY);
-    console.log('Todas las imágenes eliminadas del localStorage');
+
   }
 
   /**

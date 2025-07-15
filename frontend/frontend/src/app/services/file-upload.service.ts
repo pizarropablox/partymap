@@ -42,7 +42,7 @@ export class FileUploadService {
       // Guardar en localStorage
       this.fileStorageService.saveImageToStorage(file, imagePath)
         .then(() => {
-          console.log(`Imagen guardada localmente en: ${imagePath}`);
+    
           observer.next({ imagePath });
           observer.complete();
         })

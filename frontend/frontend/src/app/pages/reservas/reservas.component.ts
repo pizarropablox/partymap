@@ -54,7 +54,7 @@ export class ReservasComponent implements OnInit {
    * Carga la información del usuario actual
    */
   cargarUsuarioActual() {
-    console.log('=== INICIO cargarUsuarioActual ===');
+
     
     const token = localStorage.getItem('jwt') || localStorage.getItem('idToken');
     if (!token) {
@@ -64,19 +64,19 @@ export class ReservasComponent implements OnInit {
       return;
     }
 
-    console.log('Token encontrado:', token.substring(0, 20) + '...');
+    
 
     const headers = {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
 
-    console.log('Intentando obtener usuario actual desde:', ApiEndpoints.USUARIO.CURRENT);
+    
 
     this.http.get<UsuarioActual>(ApiEndpoints.USUARIO.CURRENT, { headers })
       .subscribe({
         next: (usuario) => {
-          console.log('Usuario actual cargado:', usuario);
+  
           this.usuarioActual = usuario;
           this.cargarReservas();
         },
@@ -94,8 +94,7 @@ export class ReservasComponent implements OnInit {
    * Carga las reservas desde el backend según el rol del usuario
    */
   cargarReservas() {
-    console.log('=== INICIO cargarReservas ===');
-    console.log('Usuario actual:', this.usuarioActual);
+
     
     this.isLoading = true;
     this.errorMessage = '';
@@ -103,22 +102,22 @@ export class ReservasComponent implements OnInit {
     // Usar el mismo endpoint para todos, pero filtrar según el rol
     this.reservaService.obtenerReservas().subscribe({
       next: (data) => {
-        console.log('Datos recibidos del servidor:', data);
+
         
         // Filtrar reservas según el rol del usuario
         const userRole = this.usuarioActual?.tipoUsuario?.toLowerCase() || '';
-        console.log('Rol del usuario:', userRole);
+        
         
         if (userRole === 'administrador') {
           // Los administradores ven todas las reservas
           this.reservas = data;
-          console.log('Administrador - mostrando todas las reservas:', this.reservas.length);
+          
         } else {
           // Los clientes solo ven sus propias reservas
           const userId = this.usuarioActual?.id;
-          console.log('ID del usuario actual:', userId);
+          
           this.reservas = data.filter(reserva => reserva.usuario?.id === userId);
-          console.log('Cliente - reservas filtradas:', this.reservas.length);
+          
         }
 
         // Ordenar reservas de la más reciente a la más antigua por fecha de creación
@@ -130,7 +129,7 @@ export class ReservasComponent implements OnInit {
         
         this.calcularPaginacion();
         this.isLoading = false;
-        console.log('=== FIN cargarReservas ===');
+  
       },
       error: (error) => {
         console.error('Error detallado al cargar reservas:', error);

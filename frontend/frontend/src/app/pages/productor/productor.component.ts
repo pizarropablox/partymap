@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MensajeService } from '../../shared/mensaje.service';
+import { NavigationService } from '../../services/navigation.service';
 
 interface Usuario {
   id: number;
@@ -115,16 +116,19 @@ export class ProductorComponent implements OnInit, OnDestroy {
   // Timer para verificación automática del token
   private tokenCheckInterval: any;
 
-  constructor(private router: Router, private http: HttpClient, private mensajeService: MensajeService) {}
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private mensajeService: MensajeService,
+    private navigation: NavigationService
+  ) {}
 
   async ngOnInit(): Promise<void> {
-    console.log('=== INICIO ngOnInit ===');
+
     await this.obtenerUsuarioActualId();
-    console.log('usuarioActualId después de obtenerUsuarioActualId:', this.usuarioActualId);
     this.obtenerUserRole();
     this.cargarProductores(); // Carga inicial SÍ debe limpiar sesión si hay problemas
     this.iniciarVerificacionToken();
-    console.log('=== FIN ngOnInit ===');
   }
 
   ngOnDestroy(): void {
@@ -149,11 +153,9 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   verificarTokenAutomaticamente(): void {
-    console.log('=== INICIO verificarTokenAutomaticamente ===');
     const token = localStorage.getItem('idToken') || localStorage.getItem('accessToken');
     
     if (!token) {
-      console.log('No se encontró token, cerrando sesión automáticamente');
       this.cerrarSesionAutomaticamente();
       return;
     }
@@ -166,19 +168,13 @@ export class ProductorComponent implements OnInit, OnDestroy {
         const ahora = Date.now();
         const tiempoRestante = exp - ahora;
         
-        console.log('Verificación automática del token:');
-        console.log('- Expira en:', new Date(exp));
-        console.log('- Tiempo restante (minutos):', Math.round(tiempoRestante / (1000 * 60)));
-        
         // Si el token expira en menos de 5 minutos, mostrar advertencia
         if (tiempoRestante < 5 * 60 * 1000 && tiempoRestante > 0) {
-          console.log('Token expira pronto, mostrando advertencia');
           this.mostrarAdvertenciaToken();
         }
         
         // Si el token ya expiró, cerrar sesión automáticamente
         if (tiempoRestante <= 0) {
-          console.log('Token expirado, cerrando sesión automáticamente');
           this.cerrarSesionAutomaticamente();
         }
       }
@@ -187,7 +183,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       // Si hay error al decodificar, asumir que el token es inválido
       this.cerrarSesionAutomaticamente();
     }
-    console.log('=== FIN verificarTokenAutomaticamente ===');
+
   }
 
   mostrarAdvertenciaToken(): void {
@@ -199,7 +195,6 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   cerrarSesionAutomaticamente(): void {
-    console.log('Cerrando sesión automáticamente por token expirado');
     
     // Limpiar sesión
     this.limpiarSesion();
@@ -214,13 +209,11 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   async obtenerUsuarioActualId(): Promise<void> {
-    console.log('Obteniendo usuario actual desde endpoint...');
     
     try {
       // Verificar si hay token
       const token = localStorage.getItem('idToken') || localStorage.getItem('accessToken');
       if (!token) {
-        console.log('No hay token disponible');
         this.usuarioActualId = null;
         return;
       }
@@ -233,11 +226,9 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
       // Obtener el usuario actual desde el endpoint
       const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
-      console.log('Respuesta del endpoint /usuario/current:', userResponse);
       
       if (userResponse && userResponse.id) {
         this.usuarioActualId = userResponse.id;
-        console.log('Usuario ID obtenido del endpoint:', this.usuarioActualId);
       } else {
         console.error('No se pudo obtener el ID del usuario del endpoint');
         this.usuarioActualId = null;
@@ -246,21 +237,20 @@ export class ProductorComponent implements OnInit, OnDestroy {
       console.error('Error al obtener usuario actual:', error);
       
       // Fallback: intentar extraer del token
-      console.log('Intentando extraer usuario ID del token como fallback...');
       const idToken = localStorage.getItem('idToken');
       let userId: number | null = null;
       
       if (idToken) {
         try {
           const payload = JSON.parse(atob(idToken.split('.')[1]));
-          console.log('Token payload en obtenerUsuarioActualId:', payload);
+
           
           // Buscar el ID numérico del usuario en diferentes campos posibles
           const possibleId = payload.sub || payload.usuarioId || payload.userId || payload.id;
           
           if (possibleId && !isNaN(Number(possibleId))) {
             userId = Number(possibleId);
-            console.log('Usuario ID encontrado en token:', userId);
+
           }
         } catch (e) {
           console.error('Error al decodificar token:', e);
@@ -273,12 +263,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
         if (userInfo) {
           try {
             const user = JSON.parse(userInfo);
-            console.log('UserInfo encontrado:', user);
+
             
             const possibleId = user.usuarioId || user.id || user.userId;
             if (possibleId && !isNaN(Number(possibleId))) {
               userId = Number(possibleId);
-              console.log('Usuario ID encontrado en userInfo:', userId);
+
             }
           } catch (e) {
             console.error('Error al parsear userInfo:', e);
@@ -287,7 +277,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
       }
       
       this.usuarioActualId = userId;
-      console.log('Usuario ID final establecido (fallback):', this.usuarioActualId);
+
     }
   }
 
@@ -346,9 +336,6 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   async guardarProductor(): Promise<void> {
-    console.log('=== INICIO guardarProductor ===');
-    console.log('usuarioActualId actual:', this.usuarioActualId);
-    console.log('Token disponible:', !!localStorage.getItem('idToken') || !!localStorage.getItem('accessToken'));
     
     if (!this.nuevoProductor.nombre || !this.nuevoProductor.rutProductor) {
       this.mensajeService.mostrarAdvertencia('Por favor complete todos los campos obligatorios');
@@ -374,15 +361,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
       let usuarioId = this.usuarioActualId;
       
       if (!usuarioId) {
-        console.log('Obteniendo usuario actual desde endpoint...');
+  
         try {
           // Obtener el usuario actual desde el endpoint
           const userResponse = await this.http.get<any>('http://localhost:8085/usuario/current', { headers }).toPromise();
-          console.log('Respuesta del endpoint /usuario/current:', userResponse);
-          
           if (userResponse && userResponse.id) {
             usuarioId = userResponse.id;
-            console.log('Usuario ID obtenido del endpoint:', usuarioId);
             // Actualizar la variable de clase
             this.usuarioActualId = usuarioId;
           } else {
@@ -394,26 +378,20 @@ export class ProductorComponent implements OnInit, OnDestroy {
           console.error('Error al obtener usuario actual:', userError);
           
           // Si falla el endpoint, intentar extraer del token como fallback
-          console.log('Intentando extraer usuario ID del token como fallback...');
           try {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            console.log('Token payload completo:', payload);
             
             // Buscar el ID numérico del usuario en diferentes campos posibles
             usuarioId = payload.sub || payload.usuarioId || payload.userId || payload.id;
             
             // Si no encontramos un ID numérico, intentar buscar en userInfo del localStorage
             if (!usuarioId || isNaN(Number(usuarioId))) {
-              console.log('No se encontró ID numérico en el token, buscando en userInfo...');
               const userInfo = localStorage.getItem('userInfo');
               if (userInfo) {
                 const user = JSON.parse(userInfo);
                 usuarioId = user.id || user.usuarioId || user.userId;
-                console.log('Usuario ID encontrado en userInfo:', usuarioId);
               }
             }
-            
-            console.log('Usuario ID final extraído del token:', usuarioId);
             
             // Verificar que sea un número válido
             if (!usuarioId || isNaN(Number(usuarioId))) {
@@ -443,9 +421,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         usuarioId: usuarioId
       };
 
-      console.log('Creando productor con datos:', JSON.stringify(productorData, null, 2));
-      console.log('Endpoint:', 'http://localhost:8085/usuario/crear-productor');
-      console.log('Headers:', headers);
+
 
       // Verificar si el usuario ya tiene un productor
       try {
@@ -465,25 +441,17 @@ export class ProductorComponent implements OnInit, OnDestroy {
       // Realizar la petición POST al backend
       const response = await this.http.post<any>('http://localhost:8085/usuario/crear-productor', productorData, { headers }).toPromise();
       
-      console.log('Respuesta del servidor:', response);
+
 
       // Mostrar mensaje de éxito
       this.mensajeService.mostrarExito('Usuario creado exitosamente');
       this.cerrarModalProductor();
       
-      console.log('=== ANTES de cargarProductores ===');
-      console.log('Token disponible después de crear productor:', !!localStorage.getItem('idToken') || !!localStorage.getItem('accessToken'));
-      console.log('usuarioActualId después de crear productor:', this.usuarioActualId);
-      
       // Actualizar la lista de productores
       try {
         await this.cargarProductores(false); // No limpiar sesión en caso de error
-        console.log('=== DESPUÉS de cargarProductores (éxito) ===');
-        console.log('Token disponible después de cargar productores:', !!localStorage.getItem('idToken') || !!localStorage.getItem('accessToken'));
       } catch (error) {
         console.error('Error al recargar productores después de crear:', error);
-        console.log('=== DESPUÉS de cargarProductores (error) ===');
-        console.log('Token disponible después del error:', !!localStorage.getItem('idToken') || !!localStorage.getItem('accessToken'));
         // No limpiar sesión aquí, solo mostrar error
         this.mensajeService.mostrarAdvertencia('Productor creado exitosamente, pero hubo un problema al actualizar la lista. Por favor, recarga la página.');
       }
@@ -599,14 +567,13 @@ export class ProductorComponent implements OnInit, OnDestroy {
         ...(token && { 'Authorization': `Bearer ${token}` })
       });
 
-      console.log('Intentando cargar usuarios desde:', 'http://localhost:8085/usuario/all');
-      console.log('Headers:', headers);
+
 
       // Primero probar si el servidor está disponible
       try {
         const response = await this.http.get<any[]>('http://localhost:8085/usuario/all', { headers }).toPromise();
         
-        console.log('Respuesta del servidor:', response);
+
         
         if (response) {
           // Mapear todos los usuarios de la respuesta del backend
@@ -620,7 +587,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
             rutProductor: item.rutProductor || ''
           }));
 
-          console.log('Usuarios mapeados:', this.productores);
+
           
           // Aplicar filtros
           this.aplicarFiltroProductores();
@@ -632,7 +599,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         
         // Si falla con autorización, intentar sin headers
         if (httpError.status === 401 || httpError.status === 403) {
-          console.log('Probando sin headers de autorización...');
+
           
           try {
             const responseWithoutAuth = await this.http.get<any[]>('http://localhost:8085/usuario/all').toPromise();
@@ -719,7 +686,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   limpiarSesion(): void {
-    console.log('Limpiando sesión...');
+
     
     // Limpiar todos los tokens del localStorage
     const tokensToRemove = [
@@ -738,7 +705,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
     // Limpiar también cualquier token en sessionStorage
     sessionStorage.clear();
     
-    console.log('Sesión limpiada completamente');
+
   }
 
   aplicarFiltroProductores(): void {
@@ -829,25 +796,20 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   irAlLogin(): void {
-    console.log('Redirigiendo al login de Azure B2C...');
+
     
     // Limpiar sesión primero
     this.limpiarSesion();
     
     // Redirigir directamente a Azure B2C
-    window.location.href = this.AZURE_B2C_LOGIN_URL;
+    this.navigation.goTo(this.AZURE_B2C_LOGIN_URL);
   }
 
   // Métodos para edición de productor
   editarProductor(productor: Productor): void {
-    console.log('=== INICIO editarProductor ===');
-    console.log('Productor seleccionado para editar:', productor);
-    console.log('RUT original del productor:', productor.rutProductor);
-    console.log('Tipo de RUT:', typeof productor.rutProductor);
     
     // Limpiar el RUT de puntos para el formato esperado por el backend
     const rutLimpio = this.limpiarRut(productor.rutProductor || '');
-    console.log('RUT después de limpiar puntos:', rutLimpio);
     
     // Copiar los datos del productor al formulario de edición
     this.productorEnEdicion = {
@@ -890,7 +852,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
     
     // Solo actualizar si el valor cambió
     if (valorOriginal !== valorLimpio) {
-      console.log('Actualizando productorEnEdicion.rutProductor con valor limpio');
+  
       this.productorEnEdicion.rutProductor = valorLimpio;
       // Forzar la actualización del input
       setTimeout(() => {
@@ -925,7 +887,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   async eliminarProductorConVerificacion(productor: Productor): Promise<void> {
-    console.log('Verificando eventos antes de eliminar productor:', productor);
+
     
     try {
       // Verificar si tiene eventos
@@ -973,7 +935,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
   }
 
   eliminarProductor(productor: Productor): void {
-    console.log('Eliminando productor:', productor);
+
     
     // Verificar si el productor tiene eventos asociados (esto es una verificación básica del frontend)
     // En un caso real, deberías hacer una llamada al backend para verificar esto
@@ -1004,8 +966,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         'Authorization': `Bearer ${token}`
       });
 
-      console.log('Eliminando productor ID:', productor.id);
-      console.log('Endpoint:', `http://localhost:8085/usuario/eliminar/${productor.id}`);
+
 
       // Realizar la petición DELETE al endpoint correcto
       const response = await this.http.delete<any>(
@@ -1013,7 +974,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         { headers }
       ).toPromise();
 
-      console.log('Respuesta del servidor:', response);
+
 
       // Mostrar mensaje de éxito
       this.mensajeService.mostrarExito('Usuario eliminado exitosamente');
@@ -1072,20 +1033,10 @@ export class ProductorComponent implements OnInit, OnDestroy {
     this.isSubmitting = false;
   }
 
-  async guardarEdicion(): Promise<void> {
-    console.log('=== INICIO guardarEdicion ===');
-    console.log('Estado actual del formulario:');
-    console.log('- productorEnEdicion:', this.productorEnEdicion);
-    console.log('- nombre:', this.productorEnEdicion.nombre);
-    console.log('- RUT original:', this.productorEnEdicion.rutProductor);
-    console.log('- usuarioActualId:', this.usuarioActualId);
-    
+    async guardarEdicion(): Promise<void> {
     if (!this.validarFormularioEdicion()) {
-      console.log('❌ Validación falló, no se procede con el guardado');
       return;
     }
-
-    console.log('✅ Validación exitosa, procediendo con el guardado');
 
     this.isSubmitting = true;
     this.formError = '';
@@ -1118,12 +1069,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         usuarioId: this.usuarioActualId
       };
 
-      console.log('=== DATOS A ENVIAR ===');
-      console.log('RUT antes de limpiar:', this.productorEnEdicion.rutProductor);
-      console.log('RUT después de limpiar:', rutLimpio);
-      console.log('Datos completos a enviar:', JSON.stringify(datosActualizados, null, 2));
-      console.log('Endpoint:', `http://localhost:8085/usuario/actualizar/${this.productorEnEdicion.id}`);
-      console.log('Headers:', headers);
+
 
       // Realizar la petición PUT
       const response = await this.http.put<any>(
@@ -1132,7 +1078,7 @@ export class ProductorComponent implements OnInit, OnDestroy {
         { headers }
       ).toPromise();
 
-      console.log('✅ Respuesta exitosa del servidor:', response);
+
 
       if (response) {
         this.formSuccess = 'Usuario actualizado exitosamente';
@@ -1148,17 +1094,11 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
     } catch (error: any) {
       console.error('❌ Error al actualizar productor:', error);
-      console.log('Detalles del error:');
-      console.log('- Status:', error.status);
-      console.log('- StatusText:', error.statusText);
-      console.log('- Error completo:', error);
-      console.log('- Error.error:', error.error);
-      console.log('- Error.message:', error.message);
-      console.log('- Error.name:', error.name);
+      
       
       // Si hay respuesta del servidor, mostrarla
       if (error.error) {
-        console.log('Respuesta del servidor (error.error):', JSON.stringify(error.error, null, 2));
+
       }
       
       let mensajeError = 'Error al actualizar el productor. Por favor, inténtalo de nuevo.';
@@ -1188,14 +1128,11 @@ export class ProductorComponent implements OnInit, OnDestroy {
       this.formError = mensajeError;
     } finally {
       this.isSubmitting = false;
-      console.log('=== FIN guardarEdicion ===');
+  
     }
   }
 
   validarFormularioEdicion(): boolean {
-    console.log('=== INICIO validarFormularioEdicion ===');
-    console.log('productorEnEdicion.rutProductor:', this.productorEnEdicion.rutProductor);
-    console.log('Tipo de RUT:', typeof this.productorEnEdicion.rutProductor);
     
     if (!this.productorEnEdicion.nombre?.trim()) {
       this.formError = 'El nombre del productor es obligatorio.';
@@ -1209,17 +1146,12 @@ export class ProductorComponent implements OnInit, OnDestroy {
 
     // Validación básica: solo verificar que no esté vacío
     const rutParaValidar = this.productorEnEdicion.rutProductor.trim();
-    console.log('RUT para validar:', rutParaValidar);
-    console.log('¿Está vacío?', !rutParaValidar);
-    
     if (!rutParaValidar) {
       this.formError = 'El RUT es obligatorio.';
-      console.log('Error de validación:', this.formError);
       return false;
     }
 
     this.formError = '';
-    console.log('=== FIN validarFormularioEdicion (válido) ===');
     return true;
   }
 } 

@@ -16,6 +16,7 @@ import { Subject } from 'rxjs';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus, EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
 import { MensajeService } from '../../shared/mensaje.service';
+import { NavigationService } from '../../services/navigation.service';
 
 @Component({
   selector: 'app-navbar',
@@ -51,7 +52,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private msalBroadcastService: MsalBroadcastService, // Servicio de eventos MSAL
     private reservaService: ReservaService,             // Servicio de reservas
     private cdr: ChangeDetectorRef,                     // Para detección de cambios manual
-    private mensajeService: MensajeService              // Servicio de mensajes
+    private mensajeService: MensajeService,              // Servicio de mensajes
+    private navigation: NavigationService
   ) {
   }
 
@@ -234,7 +236,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
           localStorage.removeItem('idToken');
           localStorage.removeItem('accessToken');
           setTimeout(() => {
-            window.location.href = '/login';
+            this.navigation.goTo('/login');
           }, 1500);
         } else {
           // Fallback al método anterior si falla el backend
@@ -420,8 +422,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   login() {
-    // Redirigir directamente a Azure B2C
-    window.location.href = this.AZURE_B2C_LOGIN_URL;
+    this.navigation.goTo(this.AZURE_B2C_LOGIN_URL);
   }
 
   private handleInteractionInProgress() {

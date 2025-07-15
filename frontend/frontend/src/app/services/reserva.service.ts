@@ -67,7 +67,7 @@ export class ReservaService {
   puedeHacerReservas(): boolean {
     const token = localStorage.getItem('jwt') || localStorage.getItem('idToken');
     if (!token) {
-      console.log('No hay token de autenticación');
+
       return false;
     }
 
@@ -78,14 +78,14 @@ export class ReservaService {
       if (tokenData) {
         // Verificar diferentes campos posibles para el tipo de usuario
         const tipoUsuario = tokenData.tipoUsuario || tokenData.role || tokenData.extension_Roles || '';
-        console.log('Tipo de usuario desde token:', tipoUsuario);
+
         
         if (tipoUsuario.toLowerCase() === 'cliente') {
           return true;
         }
       }
     } catch (error) {
-      console.log('Error al decodificar token:', error);
+      
     }
 
     // Si no se puede determinar desde el token, intentar obtener del backend
@@ -110,8 +110,7 @@ export class ReservaService {
       this.obtenerUsuarioActual().subscribe({
         next: (usuario) => {
           const puedeReservar = usuario?.tipoUsuario?.toLowerCase() === 'cliente';
-          console.log('Usuario desde backend:', usuario);
-          console.log('¿Puede hacer reservas?', puedeReservar);
+          
           observer.next(puedeReservar);
           observer.complete();
         },

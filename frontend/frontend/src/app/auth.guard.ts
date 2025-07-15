@@ -6,6 +6,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
+import { NavigationService } from './services/navigation.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,8 @@ export class AuthGuard implements CanActivate {
   
   constructor(
     private router: Router,
-    private msalService: MsalService
+    private msalService: MsalService,
+    private navigation: NavigationService
   ) {}
 
   /**
@@ -67,7 +69,7 @@ export class AuthGuard implements CanActivate {
       // Fallback: redirigir directamente a la URL de Azure AD B2C si MSAL falla
       const loginUrl = 'https://duocdesarrollocloudnative.b2clogin.com/DuocDesarrolloCloudNative.onmicrosoft.com/oauth2/v2.0/authorize?p=B2C_1_DuocDesarrolloCloudNative_Login&client_id=ad16d15c-7d6e-4f58-8146-4b5b3d7b7124&nonce=defaultNonce&redirect_uri=http%3A%2F%2Flocalhost%3A4200&scope=openid&response_type=id_token&prompt=login';
       
-      window.location.href = loginUrl;
+      this.navigation.goTo(loginUrl);
     }
   }
 } 
